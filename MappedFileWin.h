@@ -4,8 +4,6 @@
 	映射文件类  映射文件到内存 提供读取操作
 */
 
-////////aaaaaaaa//////aaaa
-
 #include <windows.h>
 #include <stdio.h>
 
