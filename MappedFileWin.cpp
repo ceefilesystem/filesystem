@@ -1,3 +1,4 @@
+#include "stdafx.h"
 #include "MappedFileWin.h"
 
 #if _WIN32
@@ -81,7 +82,7 @@ int mappedFileWriteRang(void * _mappedFile, int pos, int size, void * in)
 	return size;
 }
 
-int closeMappedFile(void * _mappedFile)
+void closeMappedFile(void * _mappedFile)
 {
 	mappedFileWin* mappedFile = (mappedFileWin*)_mappedFile;
 

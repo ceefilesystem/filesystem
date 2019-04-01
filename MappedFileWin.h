@@ -7,7 +7,8 @@
 void* createMappedFile(const char * filePath);
 int mappedFileReadRang(void * mappedFile, int pos, int count, void * out);
 int mappedFileWriteRang(void * mappedFile, int pos, int size, void * in);
-int closeMappedFile(void * mappedFile);
+void closeMappedFile(void * mappedFile);
+
 size_t getFileSize(void * mappedFile);
 const char* getFilePath(void * mappedFile);
 
