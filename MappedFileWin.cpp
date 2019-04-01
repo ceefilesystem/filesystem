@@ -1,16 +1,25 @@
 #include "MappedFileWin.h"
 
+#if _WIN32
+#include <windows.h>
+#endif
+
 typedef struct mappedFileWin
 {
+	const char* filePath;
 	void * mappedFileAddress;
 	size_t mappedFileSize;
 	HANDLE dumpFileDescriptor;
 	HANDLE fileMappingObject;
 }mappedFileWin;
 
-void* CreateMappedFile(const char * filePath)
+void* createMappedFile(const char * filePath)
 {
 	mappedFileWin* mappedFile;
+
+	if (filePath)
+		mappedFile->filePath = filePath;
+
 	mappedFile->dumpFileDescriptor = CreateFileA(filePath,
 		GENERIC_READ | GENERIC_WRITE,
 		FILE_SHARE_READ | FILE_SHARE_WRITE,
@@ -45,7 +54,6 @@ void* CreateMappedFile(const char * filePath)
 
 int mappedFileReadRang(void * _mappedFile, int pos, int count, void * out)
 {
-	out = NULL;
 	mappedFileWin* mappedFile = (mappedFileWin*)_mappedFile;
 	if (mappedFile->mappedFileAddress == NULL)
 		return -1;
@@ -63,7 +71,7 @@ int mappedFileReadRang(void * _mappedFile, int pos, int count, void * out)
 int mappedFileWriteRang(void * _mappedFile, int pos, int size, void * in)
 {
 	mappedFileWin* mappedFile = (mappedFileWin*)_mappedFile;
-	if (mappedFile->mappedFileAddress == NULL)
+	if (mappedFile->mappedFileAddress == NULL || in == NULL)
 		return -1;
 	if (pos < 0)
 		return -1;
@@ -73,7 +81,7 @@ int mappedFileWriteRang(void * _mappedFile, int pos, int size, void * in)
 	return size;
 }
 
-int CloseMappedFIle(void * _mappedFile)
+int closeMappedFile(void * _mappedFile)
 {
 	mappedFileWin* mappedFile = (mappedFileWin*)_mappedFile;
 
@@ -81,4 +89,14 @@ int CloseMappedFIle(void * _mappedFile)
 	CloseHandle(mappedFile->fileMappingObject);
 	CloseHandle(mappedFile->dumpFileDescriptor);
 	mappedFile = NULL;
+}
+
+size_t getFileSize(void * mappedFile)
+{
+	return ((mappedFileWin*)mappedFile)->mappedFileSize;
+}
+
+const char* getFilePath(void * mappedFile)
+{
+	((mappedFileWin*)mappedFile)->filePath;
 }
