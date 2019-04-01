@@ -3,23 +3,14 @@
 /*
 	映射文件类  映射文件到内存 提供读取操作
 */
-/*
-test
-*/
-
+#if _WIN32
 #include <windows.h>
-#include <stdio.h>
+#endif
 
-
-extern struct mappedFileWin;
-
-extern int CreateMappedFile(const char * filePath, mappedFileWin * mappedFile);
-extern int mappedFileReadRang(mappedFileWin * mappedFile, int pos, int count, void * out);
-extern int mappedFileWriteRang(mappedFileWin * mappedFile, int pos, int size, void * in);
-extern int CloseMappedFIle(mappedFileWin * mappedFile);
-
-
-
+void* CreateMappedFile(const char * filePath);
+int mappedFileReadRang(void * mappedFile, int pos, int count, void * out);
+int mappedFileWriteRang(void * mappedFile, int pos, int size, void * in);
+int CloseMappedFIle(void * mappedFile);
 
 #endif
 
