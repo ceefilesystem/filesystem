@@ -3,8 +3,10 @@
 /*
 	映射文件类  映射文件到内存 提供读取操作
 */
-
+#if _WIN32
 #include <windows.h>
+#endif
+
 #include <stdio.h>
 
 class TMappedFile
