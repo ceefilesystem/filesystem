@@ -46,7 +46,6 @@ void* createMappedFile(const char * filePath)
 	if (mappedFile->mappedFileAddress == NULL) {
 		CloseHandle(mappedFile->fileMappingObject);
 		CloseHandle(mappedFile->dumpFileDescriptor);
-		//return GetLastError();
 		return NULL;
 	}
 
