@@ -1,75 +1,78 @@
 #include "MappedFileWin.h"
 
-
-TMappedFile::TMappedFile(const char * filePath)
+typedef struct mappedFileWin
 {
+	void * mappedFileAddress;
+	size_t mappedFileSize;
+	HANDLE dumpFileDescriptor;
+	HANDLE fileMappingObject;
+}mappedFileWin;
 
-	// 映射文件到内存
-	_dumpFileDescriptor = CreateFileA(filePath,
-								GENERIC_READ | GENERIC_WRITE,
-								FILE_SHARE_READ | FILE_SHARE_WRITE,
-								NULL,
-								OPEN_EXISTING,
-								FILE_ATTRIBUTE_NORMAL,
-								NULL);
-	if (_dumpFileDescriptor == INVALID_HANDLE_VALUE)
-		return;
+int CreateMappedFile(const char * filePath, mappedFileWin * mappedFile)
+{
+	mappedFile->dumpFileDescriptor = CreateFileA(filePath,
+		GENERIC_READ | GENERIC_WRITE,
+		FILE_SHARE_READ | FILE_SHARE_WRITE,
+		NULL,
+		OPEN_EXISTING,
+		FILE_ATTRIBUTE_NORMAL,
+		NULL);
+	if (mappedFile->dumpFileDescriptor == INVALID_HANDLE_VALUE)
+		return GetLastError();
 
-	_fileMappingObject = CreateFileMapping(_dumpFileDescriptor,
-								NULL,
-								PAGE_READWRITE,
-								0,
-								0,
-								NULL);
-	if (_fileMappingObject == NULL)
-		return;
-	_mappedFileSize = GetFileSize(_fileMappingObject, NULL);
-	_mappedFileAddress = MapViewOfFile(_fileMappingObject,
-								FILE_MAP_ALL_ACCESS,
-								0,
-								0,
-								_mappedFileSize);
-	 
+	mappedFile->fileMappingObject = CreateFileMapping(mappedFile->dumpFileDescriptor,
+		NULL,
+		PAGE_READWRITE,
+		0,
+		0,
+		NULL);
+	if (mappedFile->fileMappingObject == NULL)
+		return GetLastError();
+
+	mappedFile->mappedFileSize = GetFileSize(mappedFile->fileMappingObject, NULL);
+
+	mappedFile->mappedFileAddress = MapViewOfFile(mappedFile->fileMappingObject,
+		FILE_MAP_ALL_ACCESS,
+		0,
+		0,
+		mappedFile->mappedFileSize);
+	if (mappedFile->mappedFileAddress == NULL)
+		return GetLastError();
+	return 0;
 }
 
-
-TMappedFile::~TMappedFile()
-{
-	UnmapViewOfFile(_mappedFileAddress);
-	CloseHandle(_fileMappingObject);
-	CloseHandle(_dumpFileDescriptor);
-
-}
-
-int TMappedFile::readRang(int pos, int count, void * out)
+int mappedFileReadRang(mappedFileWin * mappedFile, int pos, int count, void * out)
 {
 	out = NULL;
-	if (_mappedFileAddress == NULL)
+	if (mappedFile->mappedFileAddress == NULL)
 		return -1;
 	if (pos < 0)
 		return -1;
-	if ((pos > _mappedFileSize - 1) || (pos + count > _mappedFileSize - 1))
+	if ((pos > mappedFile->mappedFileSize - 1) || (pos + count > mappedFile->mappedFileSize - 1))
 		return -1;
-	out = (void *)((size_t)_mappedFileAddress + pos);
-	if (pos + count < _mappedFileSize - 1)
+	out = (void *)((size_t)mappedFile->mappedFileAddress + pos);
+	if (pos + count < mappedFile->mappedFileSize - 1)
 		return count;
 	else
-		return (_mappedFileSize - 1 - pos);
+		return (mappedFile->mappedFileSize - 1 - pos);
 }
 
-int TMappedFile::writeRang(int pos, int size, void * in)
+int mappedFileWriteRang(mappedFileWin * mappedFile, int pos, int size, void * in)
 {
-	if (_mappedFileAddress == NULL)
+	if (mappedFile->mappedFileAddress == NULL)
 		return -1;
 	if (pos < 0)
 		return -1;
-	if ((pos > _mappedFileSize - 1) || (pos + size > _mappedFileSize - 1))
+	if ((pos > mappedFile->mappedFileSize - 1) || (pos + size > mappedFile->mappedFileSize - 1))
 		return -1;
-	memcpy((void *)((size_t)_mappedFileAddress + pos), in, size);
+	memcpy((void *)((size_t)mappedFile->mappedFileAddress + pos), in, size);
 	return size;
 }
 
-int TMappedFile::mappedFileSize()
+int CloseMappedFIle(mappedFileWin * mappedFile)
 {
-	return _mappedFileSize;
+	UnmapViewOfFile(mappedFile->mappedFileAddress);
+	CloseHandle(mappedFile->fileMappingObject);
+	CloseHandle(mappedFile->dumpFileDescriptor);
+	mappedFile = NULL;
 }
