@@ -71,7 +71,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <IncludePath>Y:\Work\C++\Package\boost_1_69_0\;Y:\Work\C++\OpenLib\libuv-1.x\include;Y:\Work\C++\OpenLib\libwebsocket\include;Y:\Work\C++\Package\INCLUDE;$(IncludePath)</IncludePath>
-    <LibraryPath>Y:\Work\C++\OpenLib\boost_1_69_0\boost_1_67_vs2017_debug\lib;Y:\Work\C++\OpenLib\libuv-1.x\static;Y:\Work\C++\OpenLib\libwebsocket\lib\Debug;$(LibraryPath)</LibraryPath>
+    <LibraryPath>Y:\Work\C++\OpenLib\boost_1_69_0\boost_1_67_vs2017_debug\lib;E:\Users\lenovo\Desktop\libuv-1.x\Build\Debug;Y:\Work\C++\OpenLib\libwebsocket\lib\Debug;$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)fileSys\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>.\Tmp</IntDir>
   </PropertyGroup>
@@ -135,6 +135,8 @@
   <ItemGroup>
     <ClCompile Include="downLoadFile.cpp" />
     <ClCompile Include="fileService.cpp" />
+    <ClCompile Include="httpParser.cpp" />
+    <ClCompile Include="httpServer.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="mapFile.cpp" />
     <ClCompile Include="readConfig.cpp" />
@@ -147,8 +149,11 @@
     <ClInclude Include="downLoadFile.h" />
     <ClInclude Include="fileService.h" />
     <ClInclude Include="global.h" />
+    <ClInclude Include="httpParser.h" />
+    <ClInclude Include="httpServer.h" />
     <ClInclude Include="mapFile.h" />
     <ClInclude Include="readConfig.h" />
+    <ClInclude Include="uvTask.h" />
     <ClInclude Include="timeWheel.h" />
     <ClInclude Include="upLoadFile.h" />
     <ClInclude Include="uvServer.h" />

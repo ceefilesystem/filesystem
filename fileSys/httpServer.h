@@ -1,6 +1,7 @@
 #pragma once
 #include "uvTask.h"
-#include "httpParser.h"
+
+struct http_parser_settings;
 
 class httpServer
 {
@@ -19,4 +20,3 @@ public:
 	int start(const char* ip, int port);
 	void run();
 };
-

@@ -42,6 +42,12 @@
     <ClCompile Include="wsServer.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="httpServer.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="httpParser.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="mapFile.h">
@@ -72,6 +78,15 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="ws.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="httpServer.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="httpParser.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="uvTask.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

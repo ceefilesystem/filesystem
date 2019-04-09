@@ -1,3 +1,4 @@
+#include "httpParser.h"
 #include "httpServer.h"
 #include <iostream>
 
@@ -139,16 +140,42 @@ void httpServer::connection_cb(uv_stream_t *server, int status)
 
 int httpServer::start(const char * ip, int port)
 {
-	struct sockaddr_in addr;
+	/*struct sockaddr_in addr;
 	int r = uv_ip4_addr(ip, port, &addr);
 	ASSERT(r == 0);
 
 	r = uv_tcp_bind(&tcpServer, (struct sockaddr *) &addr, 0);
+	printf(uv_strerror(r));
 	ASSERT(r == 0);
 
 	tcpServer.loop = this->loop;
 	tcpServer.data = this;
-	r = uv_listen((uv_stream_t *)&tcpServer, BACKLOG, connection_cb);
+	r = uv_listen((uv_stream_t *)&tcpServer, BACKLOG, connection_cb);*/
+
+	struct sockaddr_in addr;
+	int r;
+
+	ASSERT(0 == uv_ip4_addr(ip, port, &addr));
+
+	r = uv_tcp_init(loop, &tcpServer);
+	if (r) {
+		fprintf(stderr, "Socket creation error\n");
+		return 1;
+	}
+
+	r = uv_tcp_bind(&tcpServer, (const struct sockaddr*) &addr, 0);
+	if (r) {
+		fprintf(stderr, "Bind error\n");
+		return 1;
+	}
+
+	tcpServer.loop = this->loop;
+	tcpServer.data = this;
+	r = uv_listen((uv_stream_t*)&tcpServer, SOMAXCONN, connection_cb);
+	if (r) {
+		fprintf(stderr, "Listen error %s\n", uv_err_name(r));
+		return 1;
+	}
 
 	return 0;
 }
