@@ -113,10 +113,10 @@ void fun3(void)
 int main(int argc, char *argv[])
 {
 
-	httpServer* ht = new httpServer();
+	FSByHttp* ht = new FSByHttp();
 	//uvServer* ht = new uvServer();
 
-	ht->start("127.0.0.1", 9999);
+	ht->startService();
 
 	system("pause");
 	return 0;

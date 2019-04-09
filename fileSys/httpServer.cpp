@@ -58,12 +58,18 @@ int headers_complete_cb(http_parser* parser) {
 
 httpServer::httpServer()
 {
-	uv_os_setenv("UV_THREADPOOL_SIZE", "120");
-	this->loop = uv_default_loop();
-	this->parser_settings = (http_parser_settings*)malloc(sizeof(struct http_parser_settings));
-	parser_settings->on_headers_complete = headers_complete_cb;
+	try
+	{
+		uv_os_setenv("UV_THREADPOOL_SIZE", "120");
+		this->loop = uv_default_loop();
+		this->parser_settings = (http_parser_settings*)malloc(sizeof(struct http_parser_settings));
+		parser_settings->on_headers_complete = headers_complete_cb;
+	}
+	catch (const std::exception& e)
+	{
+		throw e;
+	}
 }
-
 
 httpServer::~httpServer()
 {
@@ -73,7 +79,6 @@ httpServer::~httpServer()
 	if (this->parser_settings)
 		free(parser_settings);
 }
-
 
 void httpServer::read_cb(uv_stream_t* handle, ssize_t nread, const uv_buf_t* buf) {
 	int r = 0;
@@ -140,18 +145,6 @@ void httpServer::connection_cb(uv_stream_t *server, int status)
 
 int httpServer::start(const char * ip, int port)
 {
-	/*struct sockaddr_in addr;
-	int r = uv_ip4_addr(ip, port, &addr);
-	ASSERT(r == 0);
-
-	r = uv_tcp_bind(&tcpServer, (struct sockaddr *) &addr, 0);
-	printf(uv_strerror(r));
-	ASSERT(r == 0);
-
-	tcpServer.loop = this->loop;
-	tcpServer.data = this;
-	r = uv_listen((uv_stream_t *)&tcpServer, BACKLOG, connection_cb);*/
-
 	struct sockaddr_in addr;
 	int r;
 

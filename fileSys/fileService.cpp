@@ -63,13 +63,21 @@ FSByTcp::~FSByTcp()
 
 int FSByTcp::serviceInit()
 {
-	readConfig rc(getCurrentFilePath("config.ini").c_str());
+	try
+	{
+		readConfig rc(getCurrentFilePath("config.ini").c_str());
 
-	this->serverIp = rc.getIP();
-	this->serverPort = rc.getPort();
+		this->serverIp = rc.getIP();
+		this->serverPort = rc.getPort();
 
-	this->us = new uvServer();
-	return 0;
+		this->us = new uvServer();
+		return 0;
+	}
+	catch (...)
+	{
+		return 1;
+	}
+	
 }
 
 void FSByTcp::serviceDestroy()
@@ -78,24 +86,32 @@ void FSByTcp::serviceDestroy()
 		delete this->us;
 }
 
-void FSByTcp::startService()
+int FSByTcp::startService()
 {
-	serviceInit();
+	int r = serviceInit();
+	if (r)
+		return 1;
 
 	this->us->setDownCallBack(downLoadFun);
 	this->us->setDownCallBack(downLoadFun);
-	this->us->start(this->serverIp.c_str(), this->serverPort);
+
+	r = this->us->start(this->serverIp.c_str(), this->serverPort);
+	if (r)
+		return 1;
+
 	this->us->run();
+
+	return 0;
 }
 
-void FSByTcp::stopService()
+int FSByTcp::stopService()
 {
-	return;
+	return 0;
 }
 
-void FSByTcp::canceService()
+int FSByTcp::canceService()
 {
-	return;
+	return 0;
 }
 
 //////////////////////////http //////////////////////////
@@ -114,13 +130,21 @@ FSByHttp::~FSByHttp()
 
 int FSByHttp::serviceInit()
 {
-	readConfig rc(getCurrentFilePath("config.ini").c_str());
+	try
+	{
+		readConfig rc(getCurrentFilePath("config.ini").c_str());
 
-	this->serverIp = rc.getIP();
-	this->serverPort = rc.getPort();
+		this->serverIp = rc.getIP();
+		this->serverPort = rc.getPort();
 
-	this->hs = new httpServer();
-	return 0;
+		this->hs = new httpServer();
+		return 0;
+	}
+	catch (...)
+	{
+		return 1;
+	}
+	
 }
 
 void FSByHttp::serviceDestroy()
@@ -129,22 +153,28 @@ void FSByHttp::serviceDestroy()
 		delete this->hs;
 }
 
-void FSByHttp::startService()
+int FSByHttp::startService()
 {
-	serviceInit();
+	int r = serviceInit();
+	if (r)
+		return 1;
 
-	this->hs->start(this->serverIp.c_str(), this->serverPort);
+	r = this->hs->start(this->serverIp.c_str(), this->serverPort);
+	if (r)
+		return 1;
+
 	this->hs->run();
+	return 0;
 }
 
-void FSByHttp::stopService()
+int FSByHttp::stopService()
 {
-	return;
+	return 0;
 }
 
-void FSByHttp::canceService()
+int FSByHttp::canceService()
 {
-	return;
+	return 0;
 }
 
 
@@ -164,33 +194,49 @@ FSByWebSocket::~FSByWebSocket()
 
 int FSByWebSocket::serviceInit()
 {
-	readConfig rc(getCurrentFilePath("config.ini").c_str());
+	try
+	{
+		readConfig rc(getCurrentFilePath("config.ini").c_str());
 
-	this->serverIp = rc.getIP();
-	this->serverPort = rc.getPort();
+		this->serverIp = rc.getIP();
+		this->serverPort = rc.getPort();
 
-	this->ws = new wsServer();
-	return 0;
+		this->ws = new wsServer();
+		return 0;
+	}
+	catch (...)
+	{
+		return 1;
+	}
+	
 }
 
 void FSByWebSocket::serviceDestroy()
 {
+	if (this->ws)
+		delete this->ws;
 }
 
-void FSByWebSocket::startService()
+int FSByWebSocket::startService()
 {
-	serviceInit();
+	int r = serviceInit();
+	if (r)
+		return 1;
 
-	this->ws->start(this->serverIp.c_str(), this->serverPort);
+	r = this->ws->start(this->serverIp.c_str(), this->serverPort);
+	if (r)
+		return 1;
+
 	this->ws->run();
+	return 0;
 }
 
-void FSByWebSocket::stopService()
+int FSByWebSocket::stopService()
 {
-	return;
+	return 0;
 }
 
-void FSByWebSocket::canceService()
+int FSByWebSocket::canceService()
 {
-	return;
+	return 0;
 }

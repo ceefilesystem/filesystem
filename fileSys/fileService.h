@@ -39,13 +39,12 @@ typedef struct upLoadInof {
 
 class fileService
 {
-public:
 	virtual int serviceInit() = 0;
 	virtual void serviceDestroy() = 0;
 
-	virtual void startService() = 0;
-	virtual void stopService() = 0;
-	virtual void canceService() = 0;
+	virtual int startService() = 0;
+	virtual int stopService() = 0;
+	virtual int canceService() = 0;
 };
 
 class uvServer;
@@ -65,9 +64,9 @@ public:
 	FSByTcp();
 	virtual ~FSByTcp();
 
-	virtual void startService();
-	virtual void stopService();
-	virtual void canceService();
+	virtual int startService();
+	virtual int stopService();
+	virtual int canceService();
 
 protected:
 	virtual int serviceInit();
@@ -87,9 +86,9 @@ public:
 	FSByHttp();
 	virtual ~FSByHttp();
 
-	virtual void startService();
-	virtual void stopService();
-	virtual void canceService();
+	virtual int startService();
+	virtual int stopService();
+	virtual int canceService();
 
 protected:
 	virtual int serviceInit();
@@ -109,9 +108,9 @@ public:
 	FSByWebSocket();
 	virtual ~FSByWebSocket();
 
-	virtual void startService();
-	virtual void stopService();
-	virtual void canceService();
+	virtual int startService();
+	virtual int stopService();
+	virtual int canceService();
 
 protected:
 	virtual int serviceInit();
