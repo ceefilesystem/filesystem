@@ -4,23 +4,25 @@
 
 #define BACKLOG 128
 
-#define RESPONSE                  \
-  "HTTP/1.1 200 OK\r\n"           \
-  "Content-Type: text/plain\r\n"  \
-  "Content-Length: 14\r\n"        \
-  "\r\n"                          \
-  "Hello, World!\n"
-
 typedef struct client_t {
 	uv_tcp_t handle;
 	http_parser parser;
 } client_t;
 
+/* tcp callbacks */
 static void close_cb(uv_handle_t *);
 static void shutdown_cb(uv_shutdown_t *, int);
 static void alloc_cb(uv_handle_t*, size_t, uv_buf_t*);
 static void write_cb(uv_write_t*, int);
-static int headers_complete_cb(http_parser*);
+
+/* http callbacks */
+static int on_message_begin(http_parser*);
+static int on_headers_complete(http_parser*);
+static int on_message_complete(http_parser*);
+static int on_header_field(http_parser*);
+static int on_header_value(http_parser*);
+static int on_body(http_parser*);
+static int on_url(http_parser*);
 
 /* tcp callbacks */
 void close_cb(uv_handle_t *handle) {
@@ -44,8 +46,51 @@ void write_cb(uv_write_t* write_req, int status) {
 	free(write_req);
 }
 
+#define RESPONSE                  \
+  "HTTP/1.1 200 OK\r\n"           \
+  "Content-Type: text/plain\r\n"  \
+  "Content-Length: 14\r\n"        \
+  "\r\n"                          \
+  "Hello, World!\n"
+
 /* http callback */
-int headers_complete_cb(http_parser* parser) {
+int on_message_begin(http_parser* _) {
+	(void)_;
+	printf("\n***MESSAGE BEGIN***\n\n");
+	return 0;
+}
+
+int on_message_complete(http_parser* _) {
+	(void)_;
+	printf("\n***MESSAGE COMPLETE***\n\n");
+	return 0;
+}
+
+int on_url(http_parser* _, const char* at, size_t length) {
+	(void)_;
+	printf("Url: %.*s\n", (int)length, at);
+	return 0;
+}
+
+int on_header_field(http_parser* _, const char* at, size_t length) {
+	(void)_;
+	printf("Header field: %.*s\n", (int)length, at);
+	return 0;
+}
+
+int on_header_value(http_parser* _, const char* at, size_t length) {
+	(void)_;
+	printf("Header value: %.*s\n", (int)length, at);
+	return 0;
+}
+
+int on_body(http_parser* _, const char* at, size_t length) {
+	(void)_;
+	printf("Body: %.*s\n", (int)length, at);
+	return 0;
+}
+
+int on_headers_complete(http_parser* parser) {
 	client_t *client = (client_t *)parser->data;
 
 	uv_write_t *write_req = (uv_write_t *)malloc(sizeof(uv_write_t));
@@ -63,7 +108,13 @@ httpServer::httpServer()
 		uv_os_setenv("UV_THREADPOOL_SIZE", "120");
 		this->loop = uv_default_loop();
 		this->parser_settings = (http_parser_settings*)malloc(sizeof(struct http_parser_settings));
-		parser_settings->on_headers_complete = headers_complete_cb;
+		parser_settings->on_message_begin = on_message_begin;
+		parser_settings->on_url = on_url;
+		parser_settings->on_header_field = on_header_field;
+		parser_settings->on_header_value = on_header_value;
+		parser_settings->on_headers_complete = on_headers_complete;
+		parser_settings->on_body = on_body;
+		parser_settings->on_message_complete = on_message_complete;
 	}
 	catch (const std::exception& e)
 	{
@@ -78,6 +129,26 @@ httpServer::~httpServer()
 
 	if (this->parser_settings)
 		free(parser_settings);
+}
+
+void httpServer::setUpCallBack(upLoadCallBack upCallBack)
+{
+	this->upCallBack = upCallBack;
+}
+
+void httpServer::setDownCallBack(downLoadCallBack downCallBack)
+{
+	this->downCallBack = downCallBack;
+}
+
+upLoadCallBack httpServer::getUpCallBack()
+{
+	return this->upCallBack;
+}
+
+downLoadCallBack httpServer::getDownCallBack()
+{
+	return this->downCallBack;
 }
 
 void httpServer::read_cb(uv_stream_t* handle, ssize_t nread, const uv_buf_t* buf) {
@@ -109,6 +180,7 @@ void httpServer::read_cb(uv_stream_t* handle, ssize_t nread, const uv_buf_t* buf
 
 	int ret = 0;
 	if (nread > 0) {
+		//解析请求
 		http_parser_settings* parser_settings = ((httpServer*)(client->parser.data))->parser_settings;
 		size_t parsed = http_parser_execute(&client->parser, parser_settings, buf->base, nread);
 
@@ -116,6 +188,10 @@ void httpServer::read_cb(uv_stream_t* handle, ssize_t nread, const uv_buf_t* buf
 			printf("parse error\n");
 			uv_close((uv_handle_t *)handle, close_cb);
 		}
+
+		//TODO
+		//区分上传下载
+
 	}
 }
 

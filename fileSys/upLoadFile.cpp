@@ -27,27 +27,27 @@ upLoadFile::~upLoadFile()
 	}
 }
 
-int upLoadFile::upLoad(const char * in)
-{
-	int ret = 0;
-	if (tolsize < FILESIZE)
-		ret = upLoadAll(in);
-	else
-		//多线程分段上传 TODO
-		ret = upLoadByRange(0, 1024, in);
-
-	return ret;
-}
-
-int upLoadFile::upLoadAll(const char* in)
-{
-	if (this->tolsize == 0)
-		return 0;
-
-	int ret = this->wMF->writeDate(0, tolsize, in);
-	this->tolsize = 0;
-	return ret;
-}
+//int upLoadFile::upLoad(const char * in)
+//{
+//	int ret = 0;
+//	if (tolsize < FILESIZE)
+//		ret = upLoadAll(in);
+//	else
+//		//多线程分段上传 TODO
+//		ret = upLoadByRange(0, 1024, in);
+//
+//	return ret;
+//}
+//
+//int upLoadFile::upLoadAll(const char* in)
+//{
+//	if (this->tolsize == 0)
+//		return 0;
+//
+//	int ret = this->wMF->writeDate(0, tolsize, in);
+//	this->tolsize = 0;
+//	return ret;
+//}
 
 int upLoadFile::upLoadByRange(int pos, int count, const char* in)
 {

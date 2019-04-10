@@ -18,6 +18,10 @@ typedef int(*upLoadCallBack) (void* in);
 class wsServer
 {
 private:
+	struct lws_context * context;
+	struct lws_context_creation_info info;
+
+
 	upLoadCallBack upCallBack;
 	downLoadCallBack downCallBack;
 

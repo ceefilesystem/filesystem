@@ -13,8 +13,8 @@ public:
 	downLoadFile(const char* _filename);
 	~downLoadFile();
 
-	int downLoad(char** out);
+	//int downLoad(char** out);
 
-	int downLoadAll(char** out);
+	//int downLoadAll(char** out);
 	int downLoadByRange(int pos, int count, char** out);
 };

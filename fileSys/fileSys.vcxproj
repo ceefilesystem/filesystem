@@ -157,8 +157,8 @@
     <ClInclude Include="timeWheel.h" />
     <ClInclude Include="upLoadFile.h" />
     <ClInclude Include="uvServer.h" />
-    <ClInclude Include="ws.h" />
     <ClInclude Include="wsServer.h" />
+    <ClInclude Include="wsTask.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -77,9 +77,6 @@
     <ClInclude Include="wsServer.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="ws.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="httpServer.h">
       <Filter>头文件</Filter>
     </ClInclude>
@@ -87,6 +84,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="uvTask.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="wsTask.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
