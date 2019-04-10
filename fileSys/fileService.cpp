@@ -9,11 +9,11 @@
 //解析
 //成功返回 >0
 //失败返回 -1
-static int downLoadFun(void* in, void** out)
+static int downLoadFun(void* info, void** out)
 {
-	printf("%s\n", (char*)in);
+	printf("%s\n", (char*)info);
 
-	downLoadInof* dinfo = (downLoadInof*)in;
+	downLoadInof* dinfo = (downLoadInof*)info;
 	downLoadFile* dfile = new downLoadFile(dinfo->filename);
 
 	int ret = dfile->downLoadByRange(dinfo->pos, dinfo->count, (char**)out);

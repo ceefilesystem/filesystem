@@ -6,28 +6,30 @@ typedef struct write_req_t {
 	uv_buf_t buf;
 } write_req_t;
 
-static void onClose(uv_handle_t* peer) {
+/* tcp callbacks */
+static void on_close_cb(uv_handle_t *);
+static void on_shutdown_cb(uv_shutdown_t *, int);
+static void on_alloc_cb(uv_handle_t*, size_t, uv_buf_t*);
+static void on_write_cb(uv_write_t*, int);
+static void on_read_cb(uv_stream_t*, ssize_t, const uv_buf_t*);
+
+static void on_close_cb(uv_handle_t* peer) {
 	free(peer);
 }
 
-static void onServerClose(uv_handle_t* handle)
+static void on_shutdown_cb(uv_shutdown_t* req, int status)
 {
-	//ASSERT(handle == server);
-}
-
-static void afterShutdown(uv_shutdown_t* req, int status) 
-{
-	uv_close((uv_handle_t*)req->handle, onClose);
+	uv_close((uv_handle_t*)req->handle, on_close_cb);
 	free(req);
 }
 
-static void onAllocBuf(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf)
+static void on_alloc_cb(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf)
 {
 	buf->base = (char*)malloc(suggested_size);
 	buf->len = suggested_size;
 }
 
-static void afterWrite(uv_write_t* req, int status)
+static void on_write_cb(uv_write_t* req, int status)
 {
 	write_req_t* wr;
 
@@ -43,7 +45,7 @@ static void afterWrite(uv_write_t* req, int status)
 		uv_err_name(status), uv_strerror(status));
 }
 
-static void afterRead(uv_stream_t* handle, ssize_t nread, const uv_buf_t* buf)
+static void on_read_cb(uv_stream_t* handle, ssize_t nread, const uv_buf_t* buf)
 {
 	int i;
 	write_req_t *wr;
@@ -62,7 +64,7 @@ static void afterRead(uv_stream_t* handle, ssize_t nread, const uv_buf_t* buf)
 
 		free(buf->base);
 		sreq = (uv_shutdown_t*)malloc(sizeof* sreq);
-		ASSERT(0 == uv_shutdown(sreq, handle, afterShutdown));
+		ASSERT(0 == uv_shutdown(sreq, handle, on_shutdown_cb));
 		return;
 	}
 
@@ -83,7 +85,7 @@ static void afterRead(uv_stream_t* handle, ssize_t nread, const uv_buf_t* buf)
 				ASSERT(wr != NULL);
 				wr->buf = uv_buf_init((char*)outbuf, ret);
 
-				if (uv_write(&wr->req, handle, &wr->buf, 1, afterWrite)) {
+				if (uv_write(&wr->req, handle, &wr->buf, 1, on_write_cb)) {
 					FATAL("uv_write failed");
 				}
 			}
@@ -99,7 +101,7 @@ static void afterRead(uv_stream_t* handle, ssize_t nread, const uv_buf_t* buf)
 	return;
 }
 
-void uvServer::onConnection(uv_stream_t* server, int status)
+void uvServer::on_connection_cb(uv_stream_t* server, int status)
 {
 	uv_stream_t* stream;
 	int r;
@@ -120,7 +122,7 @@ void uvServer::onConnection(uv_stream_t* server, int status)
 	r = uv_accept(server, stream);
 	ASSERT(r == 0);
 
-	r = uv_read_start(stream, onAllocBuf, afterRead);
+	r = uv_read_start(stream, on_alloc_cb, on_read_cb);
 	ASSERT(r == 0);
 }
 
@@ -162,28 +164,27 @@ int uvServer::start(const char* ip, int port)
 	int r;
 
 	ASSERT(0 == uv_ip4_addr(ip, port, &addr));
-	server = (uv_handle_t*)&tcpServer;
 
-	r = uv_tcp_init(loop, &tcpServer);
+	r = uv_tcp_init(loop, &tcpHandle);
 	if (r) {
 		fprintf(stderr, "Socket creation error\n");
 		return 1;
 	}
 
-	r = uv_tcp_bind(&tcpServer, (const struct sockaddr*) &addr, 0);
+	r = uv_tcp_bind(&tcpHandle, (const struct sockaddr*) &addr, 0);
 	if (r) {
 		fprintf(stderr, "Bind error\n");
 		return 1;
 	}
 
-	tcpServer.loop = this->loop;
-	tcpServer.data = this;
-	r = uv_listen((uv_stream_t*)&tcpServer, SOMAXCONN, onConnection);
+	tcpHandle.loop = this->loop;
+	tcpHandle.data = this;
+	r = uv_listen((uv_stream_t*)&tcpHandle, SOMAXCONN, on_connection_cb);
 	if (r) {
 		fprintf(stderr, "Listen error %s\n", uv_err_name(r));
 		return 1;
 	}
-
+	
 	return 0;
 }
 

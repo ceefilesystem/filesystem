@@ -1,20 +1,19 @@
 #pragma once
 #include "uvTask.h"
 
-typedef int(*downLoadCallBack) (void* in, void** out);
+typedef int(*downLoadCallBack) (void* info, void** out);
 typedef int(*upLoadCallBack) (void* in);
 
 class uvServer
 {
 private:
 	uv_loop_t* loop;
-	uv_tcp_t tcpServer;
-	uv_handle_t* server;
+	uv_tcp_t tcpHandle;
 
 	upLoadCallBack upCallBack;
 	downLoadCallBack downCallBack;
 
-	static void onConnection(uv_stream_t* server, int status);
+	static void on_connection_cb(uv_stream_t* server, int status);
 public:
 	uvServer();
 	~uvServer();

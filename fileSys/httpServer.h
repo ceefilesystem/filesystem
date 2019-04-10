@@ -16,8 +16,7 @@ private:
 	upLoadCallBack upCallBack;
 	downLoadCallBack downCallBack;
 
-	static void connection_cb(uv_stream_t *, int);
-	static void read_cb(uv_stream_t*, ssize_t, const uv_buf_t*);
+	static void on_connection_cb(uv_stream_t *, int);
 
 public:
 	httpServer();
@@ -29,6 +28,7 @@ public:
 	upLoadCallBack getUpCallBack();
 	downLoadCallBack getDownCallBack();
 
+	http_parser_settings* getHttpParserSets();
 	int start(const char* ip, int port);
 	void run();
 };
