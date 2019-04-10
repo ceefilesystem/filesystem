@@ -130,6 +130,8 @@ uvServer::uvServer()
 {
 	uv_os_setenv("UV_THREADPOOL_SIZE", "120");
 	this->loop = uv_default_loop();
+	tcpHandle.loop = this->loop;
+	tcpHandle.data = this;
 }
 
 uvServer::~uvServer()
@@ -177,8 +179,6 @@ int uvServer::start(const char* ip, int port)
 		return 1;
 	}
 
-	tcpHandle.loop = this->loop;
-	tcpHandle.data = this;
 	r = uv_listen((uv_stream_t*)&tcpHandle, SOMAXCONN, on_connection_cb);
 	if (r) {
 		fprintf(stderr, "Listen error %s\n", uv_err_name(r));

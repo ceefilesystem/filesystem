@@ -163,6 +163,9 @@ httpServer::httpServer()
 	{
 		uv_os_setenv("UV_THREADPOOL_SIZE", "120");
 		this->loop = uv_default_loop();
+		tcpServer.loop = this->loop;
+		tcpServer.data = this;
+
 		this->parser_settings = (http_parser_settings*)malloc(sizeof(struct http_parser_settings));
 
 		//设置解析回调
@@ -258,8 +261,6 @@ int httpServer::start(const char * ip, int port)
 		return 1;
 	}
 
-	tcpServer.loop = this->loop;
-	tcpServer.data = this;
 	r = uv_listen((uv_stream_t*)&tcpServer, SOMAXCONN, on_connection_cb);
 	if (r) {
 		fprintf(stderr, "Listen error %s\n", uv_err_name(r));
