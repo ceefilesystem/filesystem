@@ -8,15 +8,16 @@ typedef int(*upLoadCallBack) (void* in);
 
 class httpServer
 {
+	friend static void on_connection_cb(uv_stream_t *, int);
+
+private:
+	upLoadCallBack upCallBack;
+	downLoadCallBack downCallBack;
+
 private:
 	uv_loop_t* loop;
 	uv_tcp_t tcpServer;
 	http_parser_settings* parser_settings;
-
-	upLoadCallBack upCallBack;
-	downLoadCallBack downCallBack;
-
-	static void on_connection_cb(uv_stream_t *, int);
 
 public:
 	httpServer();

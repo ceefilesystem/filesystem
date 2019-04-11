@@ -12,8 +12,10 @@ static void on_shutdown_cb(uv_shutdown_t *, int);
 static void on_alloc_cb(uv_handle_t*, size_t, uv_buf_t*);
 static void on_write_cb(uv_write_t*, int);
 static void on_read_cb(uv_stream_t*, ssize_t, const uv_buf_t*);
+static void on_connection_cb(uv_stream_t* server, int status);
 
-static void on_close_cb(uv_handle_t* peer) {
+static void on_close_cb(uv_handle_t* peer) 
+{
 	free(peer);
 }
 
@@ -101,7 +103,7 @@ static void on_read_cb(uv_stream_t* handle, ssize_t nread, const uv_buf_t* buf)
 	return;
 }
 
-void uvServer::on_connection_cb(uv_stream_t* server, int status)
+static void on_connection_cb(uv_stream_t* server, int status)
 {
 	uv_stream_t* stream;
 	int r;

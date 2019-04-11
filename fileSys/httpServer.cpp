@@ -23,6 +23,7 @@ static void on_shutdown_cb(uv_shutdown_t *, int);
 static void on_alloc_cb(uv_handle_t*, size_t, uv_buf_t*);
 static void on_write_cb(uv_write_t*, int);
 static void on_read_cb(uv_stream_t*, ssize_t, const uv_buf_t*);
+static void on_connection_cb(uv_stream_t *, int);
 
 /* http callbacks */
 static int on_message_begin(http_parser*);
@@ -34,7 +35,8 @@ static int on_body(http_parser*);
 static int on_url(http_parser*);
 
 /* tcp callbacks */
-static void on_close_cb(uv_handle_t *handle) {
+static void on_close_cb(uv_handle_t *handle)
+{
 	client_t *client = (client_t *)handle->data;
 	free(client);
 }
@@ -81,7 +83,7 @@ static void on_read_cb(uv_stream_t* handle, ssize_t nread, const uv_buf_t* buf) 
 		free(buf->base);
 		return;
 	}
-
+	
 	int ret = 0;
 	if (nread > 0) {
 		//½âÎöÇëÇó
@@ -96,6 +98,31 @@ static void on_read_cb(uv_stream_t* handle, ssize_t nread, const uv_buf_t* buf) 
 		free(buf->base);
 		return;
 	}
+}
+
+static void on_connection_cb(uv_stream_t *server, int status)
+{
+	if (status != 0) {
+		fprintf(stderr, "Connect error %s\n", uv_err_name(status));
+	}
+	ASSERT(status == 0);
+
+	client_t *client = (client_t *)malloc(sizeof(client_t));
+	int r = uv_tcp_init(server->loop, &client->handle);
+	ASSERT(r == 0);
+	client->handle.data = client;
+
+	r = uv_accept(server, (uv_stream_t *)&client->handle);
+	if (r) {
+		uv_shutdown_t *shutdown_req = (uv_shutdown_t *)malloc(sizeof(uv_shutdown_t));
+		uv_shutdown(shutdown_req, (uv_stream_t *)&client->handle, on_shutdown_cb);
+		ASSERT(r == 0);
+	}
+
+	http_parser_init(&client->parser, HTTP_REQUEST);
+	client->parser.data = client;
+	client->arg = server->data;
+	r = uv_read_start((uv_stream_t *)&client->handle, on_alloc_cb, on_read_cb);
 }
 
 /* http callback */
@@ -210,31 +237,6 @@ upLoadCallBack httpServer::getUpCallBack()
 downLoadCallBack httpServer::getDownCallBack()
 {
 	return this->downCallBack;
-}
-
-void httpServer::on_connection_cb(uv_stream_t *server, int status)
-{
-	if (status != 0) {
-		fprintf(stderr, "Connect error %s\n", uv_err_name(status));
-	}
-	ASSERT(status == 0);
-
-	client_t *client = (client_t *)malloc(sizeof(client_t));
-	int r = uv_tcp_init(server->loop, &client->handle);
-	ASSERT(r == 0);
-	client->handle.data = client;
-
-	r = uv_accept(server, (uv_stream_t *)&client->handle);
-	if (r) {
-		uv_shutdown_t *shutdown_req = (uv_shutdown_t *)malloc(sizeof(uv_shutdown_t));
-		uv_shutdown(shutdown_req, (uv_stream_t *)&client->handle, on_shutdown_cb);
-		ASSERT(r == 0);
-	}
-
-	http_parser_init(&client->parser, HTTP_REQUEST);
-	client->parser.data = client;
-	client->arg = server->data;
-	r = uv_read_start((uv_stream_t *)&client->handle, on_alloc_cb, on_read_cb);
 }
 
 http_parser_settings * httpServer::getHttpParserSets()

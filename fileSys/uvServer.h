@@ -6,14 +6,16 @@ typedef int(*upLoadCallBack) (void* in);
 
 class uvServer
 {
+	friend static void on_connection_cb(uv_stream_t* server, int status);
+
+private:
+	upLoadCallBack upCallBack;
+	downLoadCallBack downCallBack;
+
 private:
 	uv_loop_t* loop;
 	uv_tcp_t tcpHandle;
 
-	upLoadCallBack upCallBack;
-	downLoadCallBack downCallBack;
-
-	static void on_connection_cb(uv_stream_t* server, int status);
 public:
 	uvServer();
 	~uvServer();

@@ -4,26 +4,29 @@
 #define LWS_DLL
 #define LWS_INTERNAL
 #include <libwebsockets.h>
-#else
-#include <libwebsockets.h>
-#endif
-
+#pragma comment(lib, "websockets.lib")
 #pragma comment(lib, "libcrypto.lib")
 #pragma comment(lib, "libssl.lib")
+#else
+#include <libwebsockets.h>
 #pragma comment(lib, "websockets_static.lib")
+#pragma comment(lib, "libcrypto.lib")
+#pragma comment(lib, "libssl.lib")
+#endif
 
 typedef int(*downLoadCallBack) (void* in, void** out);
 typedef int(*upLoadCallBack) (void* in);
 
 class wsServer
 {
+
+private:
+	upLoadCallBack upCallBack;
+	downLoadCallBack downCallBack;
+
 private:
 	struct lws_context * context;
 	struct lws_context_creation_info info;
-
-
-	upLoadCallBack upCallBack;
-	downLoadCallBack downCallBack;
 
 public:
 	wsServer();
