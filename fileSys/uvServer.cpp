@@ -37,7 +37,7 @@ static void on_write_cb(uv_write_t* req, int status)
 
 	/* Free the read/write buffer and the request */
 	wr = (write_req_t*)req;
-	free(wr->buf.base);
+	//free(wr->buf.base);
 	free(wr);
 
 	if (status == 0)
@@ -49,7 +49,6 @@ static void on_write_cb(uv_write_t* req, int status)
 
 static void on_read_cb(uv_stream_t* handle, ssize_t nread, const uv_buf_t* buf)
 {
-	int i;
 	write_req_t *wr;
 	uv_shutdown_t* sreq;
 
@@ -61,7 +60,7 @@ static void on_read_cb(uv_stream_t* handle, ssize_t nread, const uv_buf_t* buf)
 			std::cout << "客户端异常断开\n";
 		}
 		else {
-			std::cout << "客户端)异常断开\n";
+			std::cout << "客户端异常断开\n";
 		}
 
 		free(buf->base);
@@ -77,24 +76,34 @@ static void on_read_cb(uv_stream_t* handle, ssize_t nread, const uv_buf_t* buf)
 	
 	int ret = 0;
 	if (nread > 0) {
-		if (buf->base[0] == 1) {//如果是下载协议号
-			char* outbuf = nullptr;
+		//TODO
+		//if (buf->base[0] == 1) {//如果是下载协议号
+		//	char* outbuf = nullptr;
 
-			downLoadCallBack downCallBack = ((uvServer * )handle->data)->getDownCallBack();
-			ret = downCallBack((void*)buf->base, (void**)&outbuf);
-			if (ret != 0) {
-				wr = (write_req_t*)malloc(sizeof *wr);
-				ASSERT(wr != NULL);
-				wr->buf = uv_buf_init((char*)outbuf, ret);
+		//	downLoadCallBack downCallBack = ((uvServer * )handle->data)->getDownCallBack();
+		//	ret = downCallBack((void*)buf->base, (void**)&outbuf);
+		//	if (ret != 0) {
+		//		wr = (write_req_t*)malloc(sizeof *wr);
+		//		ASSERT(wr != NULL);
+		//		wr->buf = uv_buf_init((char*)outbuf, ret);
 
-				if (uv_write(&wr->req, handle, &wr->buf, 1, on_write_cb)) {
-					FATAL("uv_write failed");
-				}
-			}
-		}
-		else if (buf->base[0] == 2) {//如果是上传歇一会
-			upLoadCallBack upCallBack = ((uvServer *)handle->data)->getUpCallBack();
-			ret = upCallBack((void*)buf->base);
+		//		if (uv_write(&wr->req, handle, &wr->buf, 1, on_write_cb)) {
+		//			FATAL("uv_write failed");
+		//		}
+		//	}
+		//}
+		//else if (buf->base[0] == 2) {//如果是上传歇一会
+		//	upLoadCallBack upCallBack = ((uvServer *)handle->data)->getUpCallBack();
+		//	ret = upCallBack((void*)buf->base);
+		//}
+
+		printf("%s\n", buf->base);
+
+		wr = (write_req_t*)malloc(sizeof *wr);
+		ASSERT(wr != NULL);
+		wr->buf = uv_buf_init((char*)buf->base, nread);
+		if (uv_write(&wr->req, handle, &wr->buf, 1, on_write_cb)) {
+			FATAL("uv_write failed");
 		}
 	}
 
@@ -123,6 +132,7 @@ static void on_connection_cb(uv_stream_t* server, int status)
 
 	r = uv_accept(server, stream);
 	ASSERT(r == 0);
+
 
 	r = uv_read_start(stream, on_alloc_cb, on_read_cb);
 	ASSERT(r == 0);

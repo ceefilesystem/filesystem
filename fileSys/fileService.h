@@ -42,6 +42,9 @@ class fileService
 	virtual int serviceInit() = 0;
 	virtual void serviceDestroy() = 0;
 
+public:
+	fileService() {};
+	virtual ~fileService() {};
 	virtual int startService() = 0;
 	virtual int stopService() = 0;
 	virtual int canceService() = 0;
@@ -116,3 +119,12 @@ protected:
 	virtual int serviceInit();
 	virtual void serviceDestroy();
 };
+
+enum ProtocolType;
+extern void* initService(ProtocolType type);
+extern void startService(void* handle);
+extern void stopService(void* handle);
+extern void canceService(void* handle);
+//extern void setReadCallBack(void* handle, int(*readCallBack) (char*, int));
+//extern int sendData(void* handle, const char* buf, int len);
+extern void deleteService(void* handle);

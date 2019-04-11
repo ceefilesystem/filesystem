@@ -93,7 +93,7 @@ int FSByTcp::startService()
 		return 1;
 
 	this->us->setDownCallBack(downLoadFun);
-	this->us->setDownCallBack(downLoadFun);
+	this->us->setUpCallBack(upLoadFun);
 
 	r = this->us->start(this->serverIp.c_str(), this->serverPort);
 	if (r)
@@ -239,4 +239,57 @@ int FSByWebSocket::stopService()
 int FSByWebSocket::canceService()
 {
 	return 0;
+}
+
+void * initService(ProtocolType type)
+{
+	fileService* fs = nullptr;
+
+	switch (type)
+	{
+	case 0:
+	{
+		fs = new FSByTcp();
+		break;
+	}
+	case 1:
+	{
+		fs = new FSByTcp();
+		break;
+	}
+	case 2:
+	{
+		fs = new FSByTcp();
+		break;
+	}
+	default:
+	{
+		break;
+	}
+	}
+	
+	return fs;
+}
+
+void startService(void * handle)
+{
+	fileService* fs = (fileService*)handle;
+	fs->startService();
+}
+
+void stopService(void * handle)
+{
+	fileService* fs = (fileService*)handle;
+	fs->stopService();
+}
+
+void canceService(void * handle)
+{
+	fileService* fs = (fileService*)handle;
+	fs->canceService();
+}
+
+void deleteService(void * handle)
+{
+	delete (fileService*)handle;
 }

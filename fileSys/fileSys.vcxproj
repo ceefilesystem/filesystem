@@ -153,6 +153,7 @@
     <ClInclude Include="httpServer.h" />
     <ClInclude Include="mapFile.h" />
     <ClInclude Include="readConfig.h" />
+    <ClInclude Include="Service.h" />
     <ClInclude Include="uvTask.h" />
     <ClInclude Include="timeWheel.h" />
     <ClInclude Include="upLoadFile.h" />

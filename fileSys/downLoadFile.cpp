@@ -24,25 +24,6 @@ downLoadFile::~downLoadFile()
 	}
 }
 
-//int downLoadFile::downLoad(char ** out)
-//{
-//	int ret = 0;
-//	if (tolSize < FILESIZE)
-//		ret = downLoadAll(out);
-//	else
-//		ret = downLoadByRange(0, 1024, out);
-//
-//	return ret;
-//}
-//
-//int downLoadFile::downLoadAll(char** out)
-//{
-//	int ret = this->rMF->readDate(0, tolSize, out);
-//	tolSize = 0;
-//	
-//	return ret;
-//}
-
 int downLoadFile::downLoadByRange(int pos, int count, char ** out)
 {
 	if (this->tolSize == 0)

@@ -89,5 +89,8 @@
     <ClInclude Include="wsTask.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="Service.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
