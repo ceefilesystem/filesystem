@@ -24,12 +24,12 @@ downLoadFile::~downLoadFile()
 	}
 }
 
+size_t downLoadFile::getTolSize()
+{
+	return tolSize;
+}
+
 int downLoadFile::downLoadByRange(int pos, int count, char ** out)
 {
-	if (this->tolSize == 0)
-		return 0;
-
-	int ret = this->rMF->readDate(pos, count, out);
-	tolSize -= count;
-	return ret;
+	return this->rMF->readDate(pos, count, out);
 }

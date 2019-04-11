@@ -7,7 +7,6 @@
 #include <boost/atomic/atomic.hpp>
 #include <boost/unordered_map.hpp>
 #include <boost/filesystem.hpp>
-#define FILESIZE 1024 * 1024 * 2
 
 using namespace boost::interprocess;
 
@@ -27,11 +26,11 @@ private:
 	mapped_region* mReg;
 
 public:
-	aSize_t rTolSize;
+	size_t rTolSize;
 	aInt refReadCount;
 	static uMapFile refReadMap;
 
-	aSize_t wTolSize;
+	size_t wTolSize;
 	aInt refWriteCount;
 	static uMapFile refWriteMap;
 
@@ -50,7 +49,7 @@ private:
 	const char* fileName;
 	mapFile* mf;
 
-	aSize_t tolSize;
+	size_t tolSize;
 
 public:
 	readByMapFile(const char* _fileName, size_t begpos = 0, size_t offset = 0);
@@ -58,7 +57,7 @@ public:
 	
 	int readDate(int pos, int count, char ** out);
 	int getUseCout();
-	int getTolSize();
+	size_t getTolSize();
 };
 
 //Ð´²Ù×÷

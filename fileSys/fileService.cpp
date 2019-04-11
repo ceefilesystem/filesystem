@@ -5,8 +5,9 @@
 #include "uvServer.h"
 #include "wsServer.h"
 #include "httpServer.h"
+#include "protocol.h"
 
-//解析
+//解析回调
 //成功返回 >0
 //失败返回 -1
 static int downLoadFun(void* info, void** out)
@@ -27,7 +28,7 @@ static int downLoadFun(void* info, void** out)
 	}
 }
 
-//解析
+//解析回调
 //成功返回 >0
 //失败返回 -1
 static int upLoadFun(void* in)
@@ -247,27 +248,27 @@ void * initService(ProtocolType type)
 
 	switch (type)
 	{
-	case 0:
-	{
-		fs = new FSByTcp();
-		break;
+		case 0:
+		{
+			fs = new FSByTcp();
+			break;
+		}
+		case 1:
+		{
+			fs = new FSByTcp();
+			break;
+		}
+		case 2:
+		{
+			fs = new FSByTcp();
+			break;
+		}
+		default:
+		{
+			break;
+		}
 	}
-	case 1:
-	{
-		fs = new FSByTcp();
-		break;
-	}
-	case 2:
-	{
-		fs = new FSByTcp();
-		break;
-	}
-	default:
-	{
-		break;
-	}
-	}
-	
+
 	return fs;
 }
 

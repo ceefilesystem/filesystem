@@ -1,42 +1,6 @@
 #pragma once
 #include <string>
 
-struct file_update_info
-{
-	char md5[32];
-	int totalSize;
-	int fileNameSize;
-	char* fileName;
-};
-
-struct file_download_info
-{
-	int fileNameSize;
-	char* fileName;
-};
-
-// md5   ---  filePath
-struct file_data
-{
-	char  md5[32];
-	int posSize;
-	int rangSize;
-	void * data;
-};
-
-typedef struct downLoadInof {
-	const char* filename;
-	int pos;
-	int count;
-}downLoadInof;
-
-typedef struct upLoadInof {
-	const char* filename;
-	int pos;
-	int count;
-	int totalSize;
-}upLoadInof;
-
 class fileService
 {
 	virtual int serviceInit() = 0;
@@ -125,6 +89,4 @@ extern void* initService(ProtocolType type);
 extern void startService(void* handle);
 extern void stopService(void* handle);
 extern void canceService(void* handle);
-//extern void setReadCallBack(void* handle, int(*readCallBack) (char*, int));
-//extern int sendData(void* handle, const char* buf, int len);
 extern void deleteService(void* handle);

@@ -20,6 +20,13 @@ mapFile::mapFile()
 
 mapFile::~mapFile()
 {
+	mapFileAddr = nullptr;
+	mapFileSize = 0;
+	mFile = nullptr;
+	mReg = nullptr;
+
+	rTolSize = 0;
+	wTolSize = 0;
 }
 
 void mapFile::createMapFile(const char * _filename, size_t _tolSize, size_t begpos, size_t offset)
@@ -102,7 +109,7 @@ readByMapFile::readByMapFile(const char * _fileName, size_t begpos, size_t offse
 			mf->refReadCount++;
 		}
 
-		tolSize = (size_t)mf->rTolSize;
+		tolSize = mf->rTolSize;
 	}
 	catch (const std::exception& e)
 	{
@@ -123,13 +130,7 @@ readByMapFile::~readByMapFile()
 
 int readByMapFile::readDate(int pos, int count, char ** out)
 {
-	int ret = mf->mapFileReadRang(pos, count, out);
-	/*if (ret != -1) {
-		this->tolSize -= count;
-		mf->rTolSize -= count;
-	}*/
-
-	return ret;
+	return mf->mapFileReadRang(pos, count, out);
 }
 
 int readByMapFile::getUseCout()
@@ -137,7 +138,7 @@ int readByMapFile::getUseCout()
 	return mf->refReadCount;
 }
 
-int readByMapFile::getTolSize()
+size_t readByMapFile::getTolSize()
 {
 	return this->tolSize;
 }
@@ -184,11 +185,7 @@ writeByMapFile::~writeByMapFile()
 
 int writeByMapFile::writeDate(int pos, int count, const char * in)
 {
-	int ret = mf->mapFileWriteRang(pos, count, in);
-	if (ret != -1)
-		mf->wTolSize -= count;
-
-	return ret;
+	return mf->mapFileWriteRang(pos, count, in);
 }
 
 int writeByMapFile::getUseCout()

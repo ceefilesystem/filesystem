@@ -29,12 +29,7 @@ upLoadFile::~upLoadFile()
 
 int upLoadFile::upLoadByRange(int pos, int count, const char* in)
 {
-	if (this->tolsize == 0)
-		return 0;
-
-	int ret = this->wMF->writeDate(pos, count, in);
-	this->tolsize -= count;
-	return ret;
+	return this->wMF->writeDate(pos, count, in);
 }
 
 bool upLoadFile::ceateFullFile(size_t offset)
