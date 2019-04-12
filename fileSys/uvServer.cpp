@@ -1,28 +1,28 @@
 #include "uvServer.h"
 #include <iostream>
 
-typedef struct write_req_t {
-	uv_write_t req;
-	uv_buf_t buf;
-} write_req_t;
-
 /* tcp callbacks */
 static void on_close_cb(uv_handle_t *);
 static void on_shutdown_cb(uv_shutdown_t *, int);
 static void on_alloc_cb(uv_handle_t*, size_t, uv_buf_t*);
 static void on_write_cb(uv_write_t*, int);
 static void on_read_cb(uv_stream_t*, ssize_t, const uv_buf_t*);
+static void on_queuework_cb(uv_work_t*);
+static void on_complete_cb(uv_work_t*, int);
 static void on_connection_cb(uv_stream_t* server, int status);
 
 static void on_close_cb(uv_handle_t* peer) 
 {
-	free(peer);
+	if (peer)
+		free(peer);
 }
 
 static void on_shutdown_cb(uv_shutdown_t* req, int status)
 {
-	uv_close((uv_handle_t*)req->handle, on_close_cb);
-	free(req);
+	if (req->handle) {
+		uv_close((uv_handle_t*)req->handle, on_close_cb);
+		free(req);
+	}
 }
 
 static void on_alloc_cb(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf)
@@ -33,12 +33,7 @@ static void on_alloc_cb(uv_handle_t* handle, size_t suggested_size, uv_buf_t* bu
 
 static void on_write_cb(uv_write_t* req, int status)
 {
-	write_req_t* wr;
-
-	/* Free the read/write buffer and the request */
-	wr = (write_req_t*)req;
-	//free(wr->buf.base);
-	free(wr);
+	free(req);
 
 	if (status == 0)
 		return;
@@ -49,7 +44,6 @@ static void on_write_cb(uv_write_t* req, int status)
 
 static void on_read_cb(uv_stream_t* handle, ssize_t nread, const uv_buf_t* buf)
 {
-	write_req_t *wr;
 	uv_shutdown_t* sreq;
 
 	if (nread < 0) {
@@ -74,40 +68,61 @@ static void on_read_cb(uv_stream_t* handle, ssize_t nread, const uv_buf_t* buf)
 		return;
 	}
 	
-	int ret = 0;
-	if (nread > 0) {
-		//TODO
-		//if (buf->base[0] == 1) {//如果是下载协议号
-		//	char* outbuf = nullptr;
-
-		//	downLoadCallBack downCallBack = ((uvServer * )handle->data)->getDownCallBack();
-		//	ret = downCallBack((void*)buf->base, (void**)&outbuf);
-		//	if (ret != 0) {
-		//		wr = (write_req_t*)malloc(sizeof *wr);
-		//		ASSERT(wr != NULL);
-		//		wr->buf = uv_buf_init((char*)outbuf, ret);
-
-		//		if (uv_write(&wr->req, handle, &wr->buf, 1, on_write_cb)) {
-		//			FATAL("uv_write failed");
-		//		}
-		//	}
-		//}
-		//else if (buf->base[0] == 2) {//如果是上传歇一会
-		//	upLoadCallBack upCallBack = ((uvServer *)handle->data)->getUpCallBack();
-		//	ret = upCallBack((void*)buf->base);
-		//}
-
-		printf("%s\n", buf->base);
-
-		wr = (write_req_t*)malloc(sizeof *wr);
-		ASSERT(wr != NULL);
-		wr->buf = uv_buf_init((char*)buf->base, nread);
-		if (uv_write(&wr->req, handle, &wr->buf, 1, on_write_cb)) {
-			FATAL("uv_write failed");
-		}
+	if (nread > 0) { //加入任务队列
+		char* basebuf = (char*)calloc(1, nread);
+		memcpy(basebuf, buf->base, nread);
+		
+		uv_work_t* uw = (uv_work_t*)malloc(sizeof(uv_work_t));
+		uw->data = basebuf;
+		uv_queue_work(((uvServer*)handle->data)->loop, uw, on_queuework_cb, on_complete_cb);
 	}
 
 	free(buf->base);
+	return;
+}
+
+static void on_queuework_cb(uv_work_t* uw)
+{
+	static std::string moreData = "";//粘包数据
+
+	printf("%s\n", uw->data);
+	//解析数据
+
+	//TODO
+	//if (buf->base[0] == 1) {//如果是下载协议号
+	//	char* outbuf = nullptr;
+
+	//	downLoadCallBack downCallBack = ((uvServer * )handle->data)->getDownCallBack();
+	//	ret = downCallBack((void*)buf->base, (void**)&outbuf);
+	//	if (ret != 0) {
+			//uv_write_t* wreq;
+			//uv_buf_t buf;
+
+			//wreq = (uv_write_t*)malloc(sizeof *wreq);
+			//ASSERT(wreq != NULL);
+	//		buf = uv_buf_init((char*)outbuf, ret);
+
+	//		if (uv_write(wreq, handle, &buf, 1, on_write_cb)) {
+	//			FATAL("uv_write failed");
+	//		}
+	//	}
+	//}
+	//else if (buf->base[0] == 2) {//如果是上传歇一会
+	//	upLoadCallBack upCallBack = ((uvServer *)handle->data)->getUpCallBack();
+	//	ret = upCallBack((void*)buf->base);
+	//}
+	
+	free(uw->data);
+	return;
+}
+
+static void on_complete_cb(uv_work_t* uw, int status)
+{
+	free(uw);
+	uw = nullptr;
+
+	if (status)
+		throw std::exception(uv_strerror(status));
 
 	return;
 }

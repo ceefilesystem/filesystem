@@ -1,5 +1,6 @@
 #pragma once
 #define LWS_PLUGIN_STATIC
+#define LWS_WITH_LIBUV
 #if !defined (LWS_PLUGIN_STATIC)
 #define LWS_DLL
 #define LWS_INTERNAL
@@ -19,7 +20,6 @@ typedef int(*upLoadCallBack) (void* in);
 
 class wsServer
 {
-
 private:
 	upLoadCallBack upCallBack;
 	downLoadCallBack downCallBack;

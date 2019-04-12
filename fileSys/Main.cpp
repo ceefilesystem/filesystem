@@ -1,5 +1,6 @@
 #include <iostream>
 #include "serviceManage.h"
+#include <boost/beast/websocket.hpp>
 
 int main(int argc, char *argv[])
 {

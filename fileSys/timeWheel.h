@@ -1,19 +1,18 @@
 #pragma once
-#include<functional>
 #include<list>
-#include<thread>
 #include<mutex>
 
-typedef struct TimePos_
+typedef void(*Fun)(void);
+typedef int timerID;
+
+typedef struct TimePos
 {
 	int ms_pos;
 	int s_pos;
 	int min_pos;
 }TimePos;
 
-typedef void (*Fun)(void);
-
-typedef struct EventInfo_
+typedef struct EventInfo
 {
 	int interval;
 	Fun call_back;
@@ -32,8 +31,8 @@ public:
 	 *max_timer 表示定时器所能接受的分钟时间间隔
 	 */
 	int InitTimerWheel(int step, int max_min);
-	int AddTimer(int interval, Fun call_back);
-	int DeleteTimer(int timer_id);
+	timerID AddTimer(int interval, Fun call_back);
+	int DeleteTimer(timerID timer_id);
 
 private:
 	int DoLoop();
@@ -58,6 +57,6 @@ private:
 };
 
 extern TimeWheel* createTimerWheel(int step, int max_min);
-extern int addTimerWheel(TimeWheel* tw, int interval, Fun callBack);
-extern int deleteTimer(TimeWheel* tw, int timerId);
-extern int updateTimer(TimeWheel* tw, int timerId, int interval, Fun callBack);
+extern timerID addTimerWheel(TimeWheel* tw, int interval, Fun callBack);
+extern int deleteTimer(TimeWheel* tw, timerID timerId);
+extern timerID updateTimer(TimeWheel* tw, timerID timerId, int interval, Fun callBack);

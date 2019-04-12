@@ -89,7 +89,10 @@
     <ClInclude Include="wsTask.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Service.h">
+    <ClInclude Include="protocol.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="serviceManage.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

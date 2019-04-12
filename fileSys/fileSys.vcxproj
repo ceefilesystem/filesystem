@@ -152,8 +152,9 @@
     <ClInclude Include="httpParser.h" />
     <ClInclude Include="httpServer.h" />
     <ClInclude Include="mapFile.h" />
+    <ClInclude Include="protocol.h" />
     <ClInclude Include="readConfig.h" />
-    <ClInclude Include="Service.h" />
+    <ClInclude Include="serviceManage.h" />
     <ClInclude Include="uvTask.h" />
     <ClInclude Include="timeWheel.h" />
     <ClInclude Include="upLoadFile.h" />

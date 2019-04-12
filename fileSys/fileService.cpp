@@ -6,6 +6,25 @@
 #include "wsServer.h"
 #include "httpServer.h"
 #include "protocol.h"
+#include "timeWheel.h"
+
+//#define TIMERTIME 1000 * 60 * 5
+#define TIMERTIME 1000
+
+static TimeWheel* tw;
+static timerID timer_id;
+
+static void timerfun();
+static int downLoadFun(void* info, void** out);
+static int upLoadFun(void* in);
+
+//定时器回调函数
+static void timerfun()
+{
+	//检测上传文件是否中断
+	printf("timerfun\n");
+	return;
+}
 
 //解析回调
 //成功返回 >0
@@ -242,6 +261,8 @@ int FSByWebSocket::canceService()
 	return 0;
 }
 
+///////////////////调用接口函数//////////////////
+
 void * initService(ProtocolType type)
 {
 	fileService* fs = nullptr;
@@ -255,12 +276,12 @@ void * initService(ProtocolType type)
 		}
 		case 1:
 		{
-			fs = new FSByTcp();
+			fs = new FSByHttp();
 			break;
 		}
 		case 2:
 		{
-			fs = new FSByTcp();
+			fs = new FSByWebSocket();
 			break;
 		}
 		default:
@@ -268,6 +289,9 @@ void * initService(ProtocolType type)
 			break;
 		}
 	}
+
+	tw = createTimerWheel(1000, 10);
+	timer_id = addTimerWheel(tw, TIMERTIME, timerfun);
 
 	return fs;
 }
@@ -292,5 +316,6 @@ void canceService(void * handle)
 
 void deleteService(void * handle)
 {
+	deleteTimer(tw, timer_id);
 	delete (fileService*)handle;
 }

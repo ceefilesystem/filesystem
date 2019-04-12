@@ -1,5 +1,7 @@
 #include "timeWheel.h"
 #include <iostream>
+#include<thread>
+
 using namespace std;
 
 TimeWheel::TimeWheel()
@@ -37,7 +39,7 @@ int TimeWheel::InitTimerWheel(int step_ms, int max_min)
 	return 0;
 }
 
-int TimeWheel::AddTimer(int interval, Fun call_back)
+timerID TimeWheel::AddTimer(int interval, Fun call_back)
 {
 	if (interval < _step_ms || interval % _step_ms != 0 || interval >= _step_ms * _lowCount * _midCount * _highCount)
 	{
@@ -59,11 +61,11 @@ int TimeWheel::AddTimer(int interval, Fun call_back)
 
 	_timer_count++;
 
-	cout << "insert timer success time_id: " << einfo.timer_id << endl;
+	//cout << "insert timer success time_id: " << einfo.timer_id << endl;
 	return einfo.timer_id;
 }
 
-int TimeWheel::DeleteTimer(int time_id)
+int TimeWheel::DeleteTimer(timerID time_id)
 {
 	std::unique_lock<std::mutex> lock(_mutex);
 	int i = 0;
@@ -91,13 +93,13 @@ int TimeWheel::DeleteTimer(int time_id)
 }
 int TimeWheel::DoLoop()
 {
-	cout << "........starting loop........" << endl;
+	//cout << "........starting loop........" << endl;
 	static int nCount = 0;
 	while (true)
 	{
 		this_thread::sleep_for(chrono::milliseconds(_step_ms));
 		std::unique_lock<std::mutex> lock(_mutex);
-		cout << ".........this is " << ++nCount << "  loop........." << endl;
+		//cout << ".........this is " << ++nCount << "  loop........." << endl;
 		TimePos pos = { 0 };
 		TimePos last_pos = _time_pos;
 		GetNextTrigerPos(_step_ms, pos);
@@ -202,17 +204,17 @@ TimeWheel * createTimerWheel(int step, int max_min)
 	return time_wheel;
 }
 
-int addTimerWheel(TimeWheel* tw, int interval, Fun callBack)
+timerID addTimerWheel(TimeWheel* tw, int interval, Fun callBack)
 {
 	return tw->AddTimer(interval, callBack);
 }
 
-int deleteTimer(TimeWheel* tw, int timerId)
+int deleteTimer(TimeWheel* tw, timerID timerId)
 {
 	return tw->DeleteTimer(timerId);
 }
 
-int updateTimer(TimeWheel* tw, int timerId, int interval, Fun callBack)
+timerID updateTimer(TimeWheel* tw, timerID timerId, int interval, Fun callBack)
 {
 	if (tw->DeleteTimer(timerId) == 0)
 		return tw->AddTimer(interval, callBack);
