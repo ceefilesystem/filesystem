@@ -1,6 +1,7 @@
 #include "httpParser.h"
 #include "httpServer.h"
 #include <iostream>
+#include <sstream>
 
 #define BACKLOG 128
 
@@ -41,23 +42,32 @@ static void on_close_cb(uv_handle_t *handle)
 	free(client);
 }
 
-static void on_shutdown_cb(uv_shutdown_t *shutdown_req, int status) {
+static void on_shutdown_cb(uv_shutdown_t *shutdown_req, int status)
+{
 	uv_close((uv_handle_t *)shutdown_req->handle, on_close_cb);
 	free(shutdown_req);
 }
 
-static void on_alloc_cb(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf) {
+static void on_alloc_cb(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf) 
+{
 	buf->base = (char*)malloc(suggested_size);
 	buf->len = suggested_size;
 	ASSERT(buf->base != NULL);
 }
 
-static void on_write_cb(uv_write_t* write_req, int status) {
-	uv_close((uv_handle_t *)write_req->handle, on_close_cb);
+static void on_write_cb(uv_write_t* write_req, int status)
+{
 	free(write_req);
+
+	if (status == 0)
+		return;
+
+	fprintf(stderr, "uv_write error: %s - %s\n",
+		uv_err_name(status), uv_strerror(status));
 }
 
-static void on_read_cb(uv_stream_t* handle, ssize_t nread, const uv_buf_t* buf) {
+static void on_read_cb(uv_stream_t* handle, ssize_t nread, const uv_buf_t* buf)
+{
 	int r = 0;
 	client_t *client = (client_t *)handle->data;
 
@@ -189,7 +199,7 @@ httpServer::httpServer()
 	try
 	{
 		uv_os_setenv("UV_THREADPOOL_SIZE", "120");
-		this->loop = uv_default_loop();
+		this->loop = uv_default_loop();	
 		tcpServer.loop = this->loop;
 		tcpServer.data = this;
 

@@ -4,7 +4,7 @@
 
 int main(int argc, char *argv[])
 {
-	void * handle = initService(ProtocolType::TCP);
+	void * handle = initService(ProtocolType::HTTP);
 	startService(handle);
 
 	system("pause");

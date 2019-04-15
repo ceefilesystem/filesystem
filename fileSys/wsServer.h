@@ -1,19 +1,5 @@
 #pragma once
-#define LWS_PLUGIN_STATIC
-#define LWS_WITH_LIBUV
-#if !defined (LWS_PLUGIN_STATIC)
-#define LWS_DLL
-#define LWS_INTERNAL
 #include <libwebsockets.h>
-#pragma comment(lib, "websockets.lib")
-#pragma comment(lib, "libcrypto.lib")
-#pragma comment(lib, "libssl.lib")
-#else
-#include <libwebsockets.h>
-#pragma comment(lib, "websockets_static.lib")
-#pragma comment(lib, "libcrypto.lib")
-#pragma comment(lib, "libssl.lib")
-#endif
 
 typedef int(*downLoadCallBack) (void* in, void** out);
 typedef int(*upLoadCallBack) (void* in);
@@ -40,5 +26,8 @@ public:
 
 	int start(const char* ip, int port);
 	void run();
+
+protected:
+	void setProtocols(struct lws_protocols* protocols);
 };
 

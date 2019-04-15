@@ -42,6 +42,12 @@ static void on_write_cb(uv_write_t* req, int status)
 		uv_err_name(status), uv_strerror(status));
 }
 
+typedef struct  ReadData {
+	int nread;
+	uv_stream_t* handle;
+	char*basebuf;
+}ReadData;
+
 static void on_read_cb(uv_stream_t* handle, ssize_t nread, const uv_buf_t* buf)
 {
 	uv_shutdown_t* sreq;
@@ -69,13 +75,17 @@ static void on_read_cb(uv_stream_t* handle, ssize_t nread, const uv_buf_t* buf)
 	}
 	
 	if (nread > 0) { //加入任务队列
-		char* basebuf = (char*)calloc(1, nread);
-		memcpy(basebuf, buf->base, nread);
+
+		ReadData* readData = (ReadData*)calloc(1, sizeof(ReadData));
+		readData->basebuf = (char*)calloc(1, nread);
+		readData->nread = nread;
+		readData->handle = handle;
+		memcpy(readData->basebuf, buf->base, nread);
 		
 		uv_work_t* uw = (uv_work_t*)malloc(sizeof(uv_work_t));
-		uw->data = basebuf;
+		uw->data = readData;
 		uv_queue_work(((uvServer*)handle->data)->loop, uw, on_queuework_cb, on_complete_cb);
-	}
+	} 
 
 	free(buf->base);
 	return;
@@ -85,8 +95,21 @@ static void on_queuework_cb(uv_work_t* uw)
 {
 	static std::string moreData = "";//粘包数据
 
-	printf("%s\n", uw->data);
+	ReadData* readData = (ReadData*)uw->data;
+
+	printf("%s\n", readData->basebuf);
 	//解析数据
+	uv_write_t* wreq;
+	uv_buf_t buf;
+
+	wreq = (uv_write_t*)malloc(sizeof *wreq);
+	ASSERT(wreq != NULL);
+	buf = uv_buf_init((char*)readData->basebuf, readData->nread);
+
+	if (uv_write(wreq, readData->handle, &buf, 1, on_write_cb)) {
+		FATAL("uv_write failed");
+	}
+
 
 	//TODO
 	//if (buf->base[0] == 1) {//如果是下载协议号
@@ -112,7 +135,8 @@ static void on_queuework_cb(uv_work_t* uw)
 	//	ret = upCallBack((void*)buf->base);
 	//}
 	
-	free(uw->data);
+	free(readData->basebuf);
+	free(readData);
 	return;
 }
 

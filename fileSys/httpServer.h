@@ -1,8 +1,6 @@
 #pragma once
 #include "uvTask.h"
 
-struct http_parser_settings;
-
 typedef int(*downLoadCallBack) (void* in, void** out);
 typedef int(*upLoadCallBack) (void* in);
 

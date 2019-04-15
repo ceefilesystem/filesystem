@@ -38,7 +38,6 @@ int wsServer::start(const char * ip, int port)
 {
 	info.port = port;
 	info.protocols = protocols;
-	info.pvo = &pvo;
 	info.vhost_name = ip;
 	info.pt_serv_buf_size = 32 * 1024;
 	info.options = LWS_SERVER_OPTION_VALIDATE_UTF8 |
@@ -56,11 +55,18 @@ int wsServer::start(const char * ip, int port)
 
 void wsServer::run()
 {
+	/* start the threads that create content */
 	int n = 0;
-	while (n >= 0 && !interrupted)
+	while (n >= 0)
 		n = lws_service(context, 1000);
 
-	lwsl_user("Completed %s\n", interrupted == 2 ? "OK" : "failed");
+	lwsl_user("Completed OK\n");
 
 	return;
+}
+
+void wsServer::setProtocols(lws_protocols * protocols)
+{
+
+
 }

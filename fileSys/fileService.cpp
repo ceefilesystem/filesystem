@@ -14,6 +14,7 @@
 static TimeWheel* tw;
 static timerID timer_id;
 
+//»Øµ÷
 static void timerfun();
 static int downLoadFun(void* info, void** out);
 static int upLoadFun(void* in);
