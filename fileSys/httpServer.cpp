@@ -1,5 +1,6 @@
 #include "httpParser.h"
 #include "httpServer.h"
+#include "httpImpl.h"
 #include <iostream>
 #include <sstream>
 
@@ -15,6 +16,7 @@
 typedef struct client_t {
 	uv_tcp_t handle;
 	http_parser parser;
+	HttpParser* httpParser;
 	void* arg;
 } client_t;
 
@@ -26,19 +28,11 @@ static void on_write_cb(uv_write_t*, int);
 static void on_read_cb(uv_stream_t*, ssize_t, const uv_buf_t*);
 static void on_connection_cb(uv_stream_t *, int);
 
-/* http callbacks */
-static int on_message_begin(http_parser*);
-static int on_headers_complete(http_parser*);
-static int on_message_complete(http_parser*);
-static int on_header_field(http_parser*);
-static int on_header_value(http_parser*);
-static int on_body(http_parser*);
-static int on_url(http_parser*);
-
 /* tcp callbacks */
 static void on_close_cb(uv_handle_t *handle)
 {
 	client_t *client = (client_t *)handle->data;
+	delete client->httpParser;
 	free(client);
 }
 
@@ -97,17 +91,24 @@ static void on_read_cb(uv_stream_t* handle, ssize_t nread, const uv_buf_t* buf)
 	int ret = 0;
 	if (nread > 0) {
 		//解析请求
-		http_parser_settings* parser_settings = ((httpServer*)(client->arg))->getHttpParserSets();
-		size_t parsed = http_parser_execute(&client->parser, parser_settings, buf->base, nread);
-
+		size_t parsed = client->httpParser->HttpParseRequest(buf->base, nread);
 		if (parsed < nread) {
 			printf("parse error\n");
 			uv_close((uv_handle_t *)handle, on_close_cb);
 		}
 
-		free(buf->base);
-		return;
+		//TODO
+		else {
+			uv_write_t *write_req = (uv_write_t *)malloc(sizeof(uv_write_t));
+			uv_buf_t buf = uv_buf_init((char*)RESPONSE, sizeof(RESPONSE));
+			int r = uv_write(write_req, (uv_stream_t *)(&client->handle), &buf, 1, on_write_cb);
+			ASSERT(r == 0);
+		}
+		
 	}
+
+	free(buf->base);
+	return;
 }
 
 static void on_connection_cb(uv_stream_t *server, int status)
@@ -129,95 +130,19 @@ static void on_connection_cb(uv_stream_t *server, int status)
 		ASSERT(r == 0);
 	}
 
-	http_parser_init(&client->parser, HTTP_REQUEST);
-	client->parser.data = client;
+	client->httpParser = new HttpParser(&client->parser, ((httpServer*)(server->data))->parser_settings);
 	client->arg = server->data;
 	r = uv_read_start((uv_stream_t *)&client->handle, on_alloc_cb, on_read_cb);
 }
 
-/* http callback */
-static int on_message_begin(http_parser* _) {
-	(void)_;
-	printf("\n***MESSAGE BEGIN***\n\n");
-	return 0;
-}
-
-static int on_message_complete(http_parser* _) {
-	(void)_;
-	printf("\n***MESSAGE COMPLETE***\n\n");
-	return 0;
-}
-
-static int on_url(http_parser* _, const char* at, size_t length) {
-	(void)_;
-
-	//TODO区分上传下载
-	// GET /UpLoad?filename  上传
-
-	// GET /DownLoad?filename 下载
-
-
-	printf("Url: %.*s\n", (int)length, at);
-	return 0;
-}
-
-static int on_header_field(http_parser* _, const char* at, size_t length) {
-	(void)_;
-
-	//TODO区分上传下载
-	printf("Header field: %.*s\n", (int)length, at);
-	return 0;
-}
-
-static int on_header_value(http_parser* _, const char* at, size_t length) {
-	(void)_;
-	printf("Header value: %.*s\n", (int)length, at);
-	return 0;
-}
-
-static int on_body(http_parser* _, const char* at, size_t length) {
-	(void)_;
-
-	//上传的 保存到磁盘
-	printf("Body: %.*s\n", (int)length, at);
-	return 0;
-}
-
-static int on_headers_complete(http_parser* parser) {
-	client_t *client = (client_t *)parser->data;
-
-	uv_write_t *write_req = (uv_write_t *)malloc(sizeof(uv_write_t));
-	uv_buf_t buf = uv_buf_init((char*)RESPONSE, sizeof(RESPONSE));
-	int r = uv_write(write_req, (uv_stream_t *)&client->handle, &buf, 1, on_write_cb);
-	ASSERT(r == 0);
-
-	return 1;
-}
-
 httpServer::httpServer()
 {
-	try
-	{
-		uv_os_setenv("UV_THREADPOOL_SIZE", "120");
-		this->loop = uv_default_loop();	
-		tcpServer.loop = this->loop;
-		tcpServer.data = this;
+	uv_os_setenv("UV_THREADPOOL_SIZE", "120");
+	this->loop = uv_default_loop();
+	tcpServer.loop = this->loop;
+	tcpServer.data = this;
 
-		this->parser_settings = (http_parser_settings*)malloc(sizeof(struct http_parser_settings));
-
-		//设置解析回调
-		parser_settings->on_message_begin = on_message_begin;
-		parser_settings->on_url = on_url;
-		parser_settings->on_header_field = on_header_field;
-		parser_settings->on_header_value = on_header_value;
-		parser_settings->on_headers_complete = on_headers_complete;
-		parser_settings->on_body = on_body;
-		parser_settings->on_message_complete = on_message_complete;
-	}
-	catch (const std::exception& e)
-	{
-		throw e;
-	}
+	this->parser_settings = (http_parser_settings*)malloc(sizeof(struct http_parser_settings));
 }
 
 httpServer::~httpServer()

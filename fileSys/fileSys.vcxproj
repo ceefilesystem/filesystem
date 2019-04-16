@@ -135,6 +135,7 @@
   <ItemGroup>
     <ClCompile Include="downLoadFile.cpp" />
     <ClCompile Include="fileService.cpp" />
+    <ClCompile Include="httpImpl.cpp" />
     <ClCompile Include="httpParser.cpp" />
     <ClCompile Include="httpServer.cpp" />
     <ClCompile Include="Main.cpp" />
@@ -149,6 +150,7 @@
     <ClInclude Include="downLoadFile.h" />
     <ClInclude Include="fileService.h" />
     <ClInclude Include="global.h" />
+    <ClInclude Include="httpImpl.h" />
     <ClInclude Include="httpParser.h" />
     <ClInclude Include="httpServer.h" />
     <ClInclude Include="mapFile.h" />
@@ -161,7 +163,6 @@
     <ClInclude Include="uvServer.h" />
     <ClInclude Include="wsServer.h" />
     <ClInclude Include="wsTask.h" />
-    <ClInclude Include="标头.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -5,70 +5,72 @@
 struct http_parser;
 struct http_parser_settings;
 
+class HttpRequest;
+
 typedef std::map<std::string, std::string> headerMap;
 typedef headerMap::iterator headerMapIter;
-
 typedef std::queue<HttpRequest*> reqQueue; //消息队列
 
-typedef struct Connection {
-	HttpRequest  *http_request_parser;    //解析时用
-	HttpRequest  *http_request_process;   //处理请求时用
-	HttpResponse  http_response;
-	HttpParser    http_parser;
-	std::queue<HttpRequest*> req_queue;
-}Connection;
-
+// 请求
 class HttpRequest
 {
-	friend class HttpParser;
-
 public:
-	std::string http_method;
-	std::string http_url;
+	std::string httpMethod;
+	std::string httpUrl;
 
-	headerMap   http_headers;
-	std::string http_header_field;
-	std::string http_body;
+	headerMap   httpHeaders;
+	std::string httpHeaderField;
+	std::string httpBody;
 
 	HttpRequest() {};
 	~HttpRequest() {};
 };
 
+// 应答
 class HttpResponse
 {
-	friend class HttpParser;
-
-private:
-	int         http_code;
-	std::string http_phrase;
-	headerMap   http_headers;
-	std::string http_body;
+public:
+	int         httpCode;
+	std::string httpPhrase;
+	headerMap   httpHeaders;
+	std::string httpBody;
 
 	HttpResponse();
 	~HttpResponse();
 
 	std::string getResponse();
-	void setResponse();
+	void setResponse(headerMap& headers, std::string &Body);
 	void resetResponse();
 };
 
+// 解析
 class HttpParser
 {
 private:
 	http_parser *parser;
-	http_parser_settings* parser_settings;
+	http_parser_settings *parserSettings;
+
+	HttpRequest *http_request_parser;
+
+	//HttpRequest *requestUpload;
+	//HttpRequest *requestDownLoad;
+
+	/* http callbacks */
+	static int on_message_begin_cb(http_parser *parser);
+	static int on_url_cb(http_parser *parser, const char *at, size_t length);
+	static int on_header_field_cb(http_parser *parser, const char *at, size_t length);
+	static int on_header_value_cb(http_parser *parser, const char *at, size_t length);
+	static int on_headers_complete_cb(http_parser *parser);
+	static int on_body_cb(http_parser *parser, const char *at, size_t length);
+	static int on_message_complete_cb(http_parser *parser);
 
 public:
-	HttpParser(http_parser *parser, http_parser_settings* parser_settings);
+	HttpParser(http_parser *parser, http_parser_settings* parserSettings);
 	~HttpParser();
 	
-	int HttpParseRequest(const std::string &inbuf);
+	size_t HttpParseRequest(const char *data, size_t len);
 
-	static int OnMessageBeginCallback(http_parser *parser);
-	static int OnUrlCallback(http_parser *parser, const char *at, size_t length);
-	static int OnHeaderFieldCallback(http_parser *parser, const char *at, size_t length);
-	static int OnHeaderValueCallback(http_parser *parser, const char *at, size_t length);
-	static int OnHeadersCompleteCallback(http_parser *parser);
-	static int OnBodyCallback(http_parser *parser, const char *at, size_t length);
-	static int OnMessageCompleteCallback(http_parser *parser);
+	static std::queue<HttpRequest*> reqUploadQueue; //上传消息队列
+	static std::queue<HttpRequest*> reqDownloadQueue; //下载消息队列
+	static std::queue<HttpRequest*> reqOtherQueue; //下载消息队列
 };

@@ -16,8 +16,15 @@ static timerID timer_id;
 
 //回调
 static void timerfun();
-static int downLoadFun(void* info, void** out);
-static int upLoadFun(void* in);
+
+static int tcpDownLoadFun(void* info, void** out);
+static int tcpUpLoadFun(void* in);
+
+static int httpDownLoadFun(void* info, void** out);
+static int httpUpLoadFun(void* in);
+
+static int websocketDownLoadFun(void* info, void** out);
+static int websocketUpLoadFun(void* in);
 
 //定时器回调函数
 static void timerfun()
@@ -30,7 +37,7 @@ static void timerfun()
 //解析回调
 //成功返回 >0
 //失败返回 -1
-static int downLoadFun(void* info, void** out)
+static int tcpDownLoadFun(void* info, void** out)
 {
 	printf("%s\n", (char*)info);
 
@@ -51,7 +58,7 @@ static int downLoadFun(void* info, void** out)
 //解析回调
 //成功返回 >0
 //失败返回 -1
-static int upLoadFun(void* in)
+static int tcpUpLoadFun(void* in)
 {
 	printf("%s\n", (char*)in);
 
@@ -113,8 +120,8 @@ int FSByTcp::startService()
 	if (r)
 		return 1;
 
-	this->us->setDownCallBack(downLoadFun);
-	this->us->setUpCallBack(upLoadFun);
+	this->us->setDownCallBack(tcpDownLoadFun);
+	this->us->setUpCallBack(tcpUpLoadFun);
 
 	r = this->us->start(this->serverIp.c_str(), this->serverPort);
 	if (r)
@@ -136,6 +143,17 @@ int FSByTcp::canceService()
 }
 
 //////////////////////////http //////////////////////////
+
+static int httpDownLoadFun(void* info, void** out)
+{
+
+	return 0;
+}
+static int httpUpLoadFun(void* in)
+{
+
+	return 0;
+}
 
 FSByHttp::FSByHttp()
 {
@@ -180,6 +198,8 @@ int FSByHttp::startService()
 	if (r)
 		return 1;
 
+	this->hs->setDownCallBack(httpDownLoadFun);
+	this->hs->setUpCallBack(httpUpLoadFun);
 	r = this->hs->start(this->serverIp.c_str(), this->serverPort);
 	if (r)
 		return 1;
@@ -200,6 +220,18 @@ int FSByHttp::canceService()
 
 
 //////////////////////////websocket //////////////////////////
+
+static int websocketDownLoadFun(void* info, void** out)
+{
+
+	return 0;
+}
+
+static int websocketUpLoadFun(void* in)
+{
+
+	return 0;
+}
 
 FSByWebSocket::FSByWebSocket()
 {
@@ -244,6 +276,8 @@ int FSByWebSocket::startService()
 	if (r)
 		return 1;
 
+	this->ws->setDownCallBack(websocketDownLoadFun);
+	this->ws->setUpCallBack(websocketUpLoadFun);
 	r = this->ws->start(this->serverIp.c_str(), this->serverPort);
 	if (r)
 		return 1;

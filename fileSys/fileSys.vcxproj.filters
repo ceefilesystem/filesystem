@@ -48,6 +48,9 @@
     <ClCompile Include="httpParser.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="httpImpl.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="mapFile.h">
@@ -95,7 +98,7 @@
     <ClInclude Include="serviceManage.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="标头.h">
+    <ClInclude Include="httpImpl.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

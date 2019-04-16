@@ -1,86 +1,95 @@
+#define _CRT_SECURE_NO_WARNINGS
 #include "httpImpl.h"
 #include "httpParser.h"
 #include <sstream>
 
+std::queue<HttpRequest*> HttpParser::reqUploadQueue;
+std::queue<HttpRequest*> HttpParser::reqDownloadQueue;
+std::queue<HttpRequest*> HttpParser::reqOtherQueue;
+
 HttpResponse::HttpResponse()
 {
-	http_code = 200;
-	http_phrase = "OK";
+	httpCode = 200;
+	httpPhrase = "OK";
+
+	httpPhrase.clear();
+	httpBody.clear();
+	httpHeaders.clear();
 }
 
 HttpResponse::~HttpResponse()
 {
-	http_code = 404;
-	http_phrase = "NOT FOUNT";
+	httpCode = 404;
+	httpPhrase = "NOT FOUNT";
 
-	http_phrase.clear();
-	http_body.clear();
-	http_headers.clear();
+	httpPhrase.clear();
+	httpBody.clear();
+	httpHeaders.clear();
 }
 
-void HttpResponse::setResponse()
+void HttpResponse::setResponse(headerMap& headers, std::string &Body)
 {
+	httpBody = Body;
+	httpHeaders = headers;
+
 	return;
 }
 
 std::string HttpResponse::getResponse()
 {
 	std::ostringstream ostream;
-	ostream << "HTTP/1.1" << " " << http_code << " " << http_phrase << "\r\n"
+	ostream << "HTTP/1.1" << " " << httpCode << " " << httpPhrase << "\r\n"
 		<< "Connection: keep-alive" << "\r\n";
 
-	headerMapIter iter = http_headers.begin();
+	headerMapIter iter = httpHeaders.begin();
 
-	while (iter != http_headers.end())
+	while (iter != httpHeaders.end())
 	{
 		ostream << iter->first << ": " << iter->second << "\r\n";
 		++iter;
 	}
-	ostream << "Content-Length: " << http_body.size() << "\r\n\r\n";
-	ostream << http_body;
+	ostream << "Content-Length: " << httpBody.size() << "\r\n\r\n";
+	ostream << httpBody;
 
 	return ostream.str();
 }
 
 void HttpResponse::resetResponse()
 {
-	http_code = 200;
-	http_phrase = "OK";
+	httpCode = 200;
+	httpPhrase = "OK";
 
-	http_body.clear();
-	http_headers.clear();
+	httpBody.clear();
+	httpHeaders.clear();
 }
 
 HttpParser::HttpParser(http_parser *parser, http_parser_settings* parser_settings)
 {
-	this->parser = (http_parser*)malloc(sizeof(struct http_parser));
-	http_parser_init(parser, HTTP_REQUEST);
+	this->parser = parser;
+	this->parser->data = this;
 
-	this->parser_settings = (http_parser_settings*)malloc(sizeof(struct http_parser_settings));
+	//初始化
+	http_parser_init(this->parser, HTTP_REQUEST);
+	http_parser_settings_init(parser_settings);
 
 	//设置解析回调
-	parser_settings->on_message_begin = OnMessageBeginCallback;
-	parser_settings->on_url = OnUrlCallback;
-	parser_settings->on_header_field = OnHeaderFieldCallback;
-	parser_settings->on_header_value = OnHeaderValueCallback;
-	parser_settings->on_headers_complete = OnHeadersCompleteCallback;
-	parser_settings->on_body = OnBodyCallback;
-	parser_settings->on_message_complete = OnMessageCompleteCallback;
+	this->parserSettings = parser_settings;
+	this->parserSettings->on_message_begin = on_message_begin_cb;
+	this->parserSettings->on_url = on_url_cb;
+	this->parserSettings->on_header_field = on_header_field_cb;
+	this->parserSettings->on_header_value = on_header_value_cb;
+	this->parserSettings->on_headers_complete = on_headers_complete_cb;
+	this->parserSettings->on_body = on_body_cb;
+	this->parserSettings->on_message_complete = on_message_complete_cb;
 }
 
 HttpParser::~HttpParser()
 {
-	if (this->parser)
-		free(this->parser);
-
-	if (this->parser_settings)
-		free(this->parser_settings);
 }
 
-int HttpParser::HttpParseRequest(const std::string & inbuf)
+size_t HttpParser::HttpParseRequest(const char *data, size_t len)
 {
-	int nparsed = http_parser_execute(parser, parser_settings, inbuf.c_str(), inbuf.size());
-
+	size_t nparsed = http_parser_execute(parser, parserSettings, data, len);
 	if (parser->http_errno != HPE_OK)
 	{
 		return -1;
@@ -89,69 +98,87 @@ int HttpParser::HttpParseRequest(const std::string & inbuf)
 	return nparsed;
 }
 
-/* 开始解析 */
-int HttpParser::OnMessageBeginCallback(http_parser *parser)
+int HttpParser::on_message_begin_cb(http_parser *parser)
 {
-	Connection *con = (Connection*)parser->data;
-	con->http_request_parser = new HttpRequest();
+	printf("\n***MESSAGE BEGIN***\n\n");
+	HttpParser* hp = (HttpParser*)(parser->data);
+	hp->http_request_parser = new HttpRequest();
 
 	return 0;
 }
 
-/* 将解析好的url赋值给http_url */
-int HttpParser::OnUrlCallback(http_parser *parser, const char *at, size_t length)
+int HttpParser::on_url_cb(http_parser *parser, const char *at, size_t length)
 {
-	Connection *con = (Connection*)parser->data;
-	con->http_request_parser->http_url.assign(at, length);
+	printf("Url: %.*s\n", (int)length, at);
+
+	char urlBuf[256] = { 0 };
+	sprintf(urlBuf, "%.*s", (int)length, at);
+	_strlwr(urlBuf);
+
+	HttpParser* hp = (HttpParser*)(parser->data);
+	hp->http_request_parser->httpUrl.assign(at, length);
+
+	//区分上传下载
+	if(strstr(urlBuf, "?upload"))
+		reqUploadQueue.push(hp->http_request_parser);
+	else if (strstr(urlBuf, "?download"))
+		reqDownloadQueue.push(hp->http_request_parser);
+	else
+		reqOtherQueue.push(hp->http_request_parser);
 
 	return 0;
 }
 
-/* 将解析到的header_field暂存在http_header_field中 */
-int HttpParser::OnHeaderFieldCallback(http_parser *parser, const char *at, size_t length)
+int HttpParser::on_header_field_cb(http_parser *parser, const char *at, size_t length)
 {
-	Connection *con = (Connection*)parser->data;
-	con->http_request_parser->http_header_field.assign(at, length);
+	printf("Header field: %.*s\n", (int)length, at);
+	HttpParser* hp = (HttpParser*)(parser->data);
+	hp->http_request_parser->httpHeaderField.assign(at, length);
 
 	return 0;
 }
 
-/* 将解析到的header_value跟header_field一一对应 */
-int HttpParser::OnHeaderValueCallback(http_parser *parser, const char *at, size_t length)
+int HttpParser::on_header_value_cb(http_parser *parser, const char *at, size_t length)
 {
-	Connection      *con = (Connection*)parser->data;
-	HttpRequest *request = con->http_request_parser;
-	request->http_headers[request->http_header_field] = std::string(at, length);
+	printf("Header value: %.*s\n", (int)length, at);
+	HttpParser* hp = (HttpParser*)(parser->data);
+	HttpRequest *request = hp->http_request_parser;
+	request->httpHeaders[request->httpHeaderField] = std::string(at, length);
 
 	return 0;
 }
 
-/* 参照官方文档 */
-int HttpParser::OnHeadersCompleteCallback(http_parser *parser)
+int HttpParser::on_headers_complete_cb(http_parser *parser)
 {
-	Connection *con = (Connection*)parser->data;
-	HttpRequest *request = con->http_request_parser;
-	request->http_method = http_method_str((http_method)parser->method);
+	HttpParser* hp = (HttpParser*)(parser->data);
+	HttpRequest *request = hp->http_request_parser;
+	request->httpMethod = http_method_str((http_method)parser->method);
+
 	return 0;
 }
 
-/* 本函数可能被调用不止一次，因此使用append */
-int HttpParser::OnBodyCallback(http_parser *parser, const char *at, size_t length)
+// 可能会多次调用
+int HttpParser::on_body_cb(http_parser *parser, const char *at, size_t length)
 {
-	Connection *con = (Connection*)parser->data;
-	con->http_request_parser->http_body.append(at, length);
+	printf("Body: %.*s\n", (int)length, at);
+	HttpParser* hp = (HttpParser*)(parser->data);
+	hp->http_request_parser->httpBody.append(at, length);
+
 	return 0;
 }
 
-/* 将解析完毕的消息放到消息队列中 */
-int HttpParser::OnMessageCompleteCallback(http_parser *parser)
+int HttpParser::on_message_complete_cb(http_parser *parser)
 {
-	Connection *con = (Connection*)parser->data;
-	HttpRequest *request = con->http_request_parser;
+	printf("\n***MESSAGE COMPLETE***\n\n");
+	HttpParser* hp = (HttpParser*)(parser->data);
+	HttpRequest *request = hp->http_request_parser;
 
-	con->req_queue.push(request);
+	for (size_t i = 0; i < reqOtherQueue.size(); i++)	{
+		HttpRequest *request = reqOtherQueue.back();
+		delete request;
+		request = nullptr;
+		reqOtherQueue.pop();
+	}
 
-	delete con->http_request_parser;
-	con->http_request_parser = NULL;
 	return 0;
 }

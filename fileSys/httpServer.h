@@ -1,6 +1,8 @@
 #pragma once
 #include "uvTask.h"
 
+class HttpParser;
+struct http_parser_settings;
 typedef int(*downLoadCallBack) (void* in, void** out);
 typedef int(*upLoadCallBack) (void* in);
 
@@ -15,6 +17,8 @@ private:
 private:
 	uv_loop_t* loop;
 	uv_tcp_t tcpServer;
+
+	HttpParser* httpParser;
 	http_parser_settings* parser_settings;
 
 public:
