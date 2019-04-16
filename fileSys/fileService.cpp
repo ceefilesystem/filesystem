@@ -4,6 +4,7 @@
 #include "readConfig.h"
 #include "uvServer.h"
 #include "wsServer.h"
+#include "httpImpl.h"
 #include "httpServer.h"
 #include "protocol.h"
 #include "timeWheel.h"
@@ -17,13 +18,14 @@ static timerID timer_id;
 //回调
 static void timerfun();
 
-static int tcpDownLoadFun(void* info, void** out);
+//tcp协议回调
+static int tcpDownLoadFun(void* in, void** out);
 static int tcpUpLoadFun(void* in);
-
-static int httpDownLoadFun(void* info, void** out);
+//http协议回调
+static int httpDownLoadFun(void* in, void** out);
 static int httpUpLoadFun(void* in);
-
-static int websocketDownLoadFun(void* info, void** out);
+//websocket协议回调
+static int websocketDownLoadFun(void* in, void** out);
 static int websocketUpLoadFun(void* in);
 
 //定时器回调函数
@@ -144,13 +146,52 @@ int FSByTcp::canceService()
 
 //////////////////////////http //////////////////////////
 
-static int httpDownLoadFun(void* info, void** out)
+static int httpDownLoadFun(void* in, void** out)
 {
+	HttpRequest* request = (HttpRequest*)in;
 
+	std::string fileName = "";
+	size_t pos = 0;
+	size_t count = 100;
+
+	fileName = request->httpUrl.substr(1, request->httpUrl.find('?', 1) - 1);
+	downLoadFile* dfile = new downLoadFile(fileName.c_str());
+
+	char* outbuf = nullptr;
+	int ret = dfile->downLoadByRange(pos, count, (char**)&outbuf);
+	if (outbuf != nullptr) {
+		*out = calloc(1, count + 1);
+		memcpy(*out, outbuf, count);
+		delete dfile;
+		return ret;
+	}
+	else {
+		delete dfile;
+		return -1;
+	}
 	return 0;
 }
+
 static int httpUpLoadFun(void* in)
 {
+	HttpRequest* request = (HttpRequest*)in;
+
+	std::string fileName = "";
+	size_t totalSize = 0;
+	size_t pos = 0;
+	size_t count = 0;
+
+	fileName = request->httpUrl.substr(1, request->httpUrl.find('?', 1));
+	upLoadFile* ufile = new upLoadFile(fileName.c_str(), totalSize);
+	int ret = ufile->upLoadByRange(pos, count, (char*)in);
+	if (ret != 0) {
+		delete ufile;
+		return ret;
+	}
+	else {
+		delete ufile;
+		return -1;
+	}
 
 	return 0;
 }

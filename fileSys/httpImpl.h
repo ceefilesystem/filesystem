@@ -14,16 +14,27 @@ typedef std::queue<HttpRequest*> reqQueue; //消息队列
 // 请求
 class HttpRequest
 {
-public:
-	std::string httpMethod;
-	std::string httpUrl;
+	friend class HttpParser;
 
-	headerMap   httpHeaders;
+private:
 	std::string httpHeaderField;
+
+public:
+	bool IsUpLoad;
+	bool IsDownLoad;
+	std::string httpUrl;
+	std::string httpMethod;
+	headerMap   httpHeaders;
 	std::string httpBody;
 
-	HttpRequest() {};
-	~HttpRequest() {};
+	HttpRequest() {
+		IsUpLoad = false;
+		IsDownLoad = false;
+	};
+
+	~HttpRequest() {
+	
+	};
 };
 
 // 应答
@@ -39,7 +50,6 @@ public:
 	~HttpResponse();
 
 	std::string getResponse();
-	void setResponse(headerMap& headers, std::string &Body);
 	void resetResponse();
 };
 
@@ -50,10 +60,7 @@ private:
 	http_parser *parser;
 	http_parser_settings *parserSettings;
 
-	HttpRequest *http_request_parser;
-
-	//HttpRequest *requestUpload;
-	//HttpRequest *requestDownLoad;
+	HttpRequest *request;
 
 	/* http callbacks */
 	static int on_message_begin_cb(http_parser *parser);
@@ -68,9 +75,7 @@ public:
 	HttpParser(http_parser *parser, http_parser_settings* parserSettings);
 	~HttpParser();
 	
-	size_t HttpParseRequest(const char *data, size_t len);
+	size_t httpParseRequest(const char *data, size_t len);
 
-	static std::queue<HttpRequest*> reqUploadQueue; //上传消息队列
-	static std::queue<HttpRequest*> reqDownloadQueue; //下载消息队列
-	static std::queue<HttpRequest*> reqOtherQueue; //下载消息队列
+	HttpRequest* getRequest();
 };

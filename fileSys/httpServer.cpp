@@ -11,7 +11,7 @@
   "Content-Type: text/plain\r\n"  \
   "Content-Length: 14\r\n"        \
   "\r\n"                          \
-  "Hello, World!\n"
+  "upload ok!\n"
 
 typedef struct client_t {
 	uv_tcp_t handle;
@@ -88,21 +88,62 @@ static void on_read_cb(uv_stream_t* handle, ssize_t nread, const uv_buf_t* buf)
 		return;
 	}
 	
-	int ret = 0;
 	if (nread > 0) {
 		//解析请求
-		size_t parsed = client->httpParser->HttpParseRequest(buf->base, nread);
+		httpServer* hs = (httpServer*)(client->arg);
+		size_t parsed = client->httpParser->httpParseRequest(buf->base, nread);
 		if (parsed < nread) {
 			printf("parse error\n");
 			uv_close((uv_handle_t *)handle, on_close_cb);
 		}
-
-		//TODO
 		else {
-			uv_write_t *write_req = (uv_write_t *)malloc(sizeof(uv_write_t));
-			uv_buf_t buf = uv_buf_init((char*)RESPONSE, sizeof(RESPONSE));
-			int r = uv_write(write_req, (uv_stream_t *)(&client->handle), &buf, 1, on_write_cb);
-			ASSERT(r == 0);
+			HttpRequest* request = client->httpParser->getRequest();
+			//上传
+			if (request->IsUpLoad) {
+				upLoadCallBack upCallBack = hs->getUpCallBack();
+				int ret = upCallBack((void*)request);
+				if (ret != 0) {
+					//组装应答包
+					HttpResponse respones;
+					respones.httpBody = "UpLoad OK";
+
+					headerMap headers;
+					headers["response-content-type"] = "text/plain";
+					respones.httpHeaders = headers;
+
+					uv_write_t *write_req = (uv_write_t *)malloc(sizeof(uv_write_t));
+
+					std::string responesBuf = respones.getResponse();
+					int len = responesBuf.length();
+					uv_buf_t buf = uv_buf_init((char*)responesBuf.c_str(), len);
+					int r = uv_write(write_req, (uv_stream_t *)(&client->handle), &buf, 1, on_write_cb);
+					ASSERT(r == 0);
+				}
+			}
+			//下载
+			else if(request->IsDownLoad) {
+				char* outbuf = nullptr;
+				downLoadCallBack downCallBack = hs->getDownCallBack();
+				int ret = downCallBack((void*)request, (void**)&outbuf);
+				if (ret != 0) {
+					//组装应答包
+					HttpResponse respones;
+					respones.httpBody = outbuf;
+					free(outbuf);
+
+					headerMap headers;
+					headers["response-content-type"] = "text/plain";
+					respones.httpHeaders = headers;
+
+					uv_write_t *write_req = (uv_write_t *)malloc(sizeof(uv_write_t));
+
+					std::string responesBuf = respones.getResponse();
+					int len = responesBuf.length();
+					uv_buf_t buf = uv_buf_init((char*)responesBuf.c_str(), len);
+					int r = uv_write(write_req, (uv_stream_t *)(&client->handle), &buf, 1, on_write_cb);
+					ASSERT(r == 0);
+				}
+			}
 		}
 		
 	}
