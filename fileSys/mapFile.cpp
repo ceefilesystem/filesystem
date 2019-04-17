@@ -22,8 +22,16 @@ mapFile::~mapFile()
 {
 	mapFileAddr = nullptr;
 	mapFileSize = 0;
-	mFile = nullptr;
-	mReg = nullptr;
+
+	if (mFile) {
+		delete mFile;
+		mFile = nullptr;
+	}
+
+	if (mReg) {
+		delete mReg;
+		mReg = nullptr;
+	}
 
 	rTolSize = 0;
 	wTolSize = 0;
@@ -32,18 +40,18 @@ mapFile::~mapFile()
 void mapFile::createMapFile(const char * _filename, size_t _tolSize, size_t begpos, size_t offset)
 {
 	if (_filename == nullptr)
-		return ;
+		return;
 
 	try
 	{
 		//创建文件的内存映射
-		file_mapping* m_file = new file_mapping(_filename, read_write);
+		this->mFile = new file_mapping(_filename, read_write);
 		//在本进程中将全部的共享内存对象映射到映射域中
-		mapped_region* region = new mapped_region(*m_file, read_write, begpos, offset);
+		this->mReg = new mapped_region(*this->mFile, read_write, begpos, offset);
 
 		//通过生成的映射域对象，可以获取该共享内存的起始地址 和 该共享内存的大小(字节)
-		this->mapFileAddr = (char*)region->get_address();
-		this->mapFileSize = region->get_size();
+		this->mapFileAddr = (char*)mReg->get_address();
+		this->mapFileSize = mReg->get_size();
 
 		if (_tolSize == 0)
 			rTolSize = this->mapFileSize;
@@ -56,7 +64,7 @@ void mapFile::createMapFile(const char * _filename, size_t _tolSize, size_t begp
 		throw e;
 	}
 
-	return ;
+	return;
 }
 
 int mapFile::mapFileReadRang(int pos, int count, char ** out)

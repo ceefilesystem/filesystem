@@ -16,7 +16,7 @@
 typedef struct client_t {
 	uv_tcp_t handle;
 	http_parser parser;
-	HttpParser* httpParser;
+	HttpParser* hp;
 	void* arg;
 } client_t;
 
@@ -26,13 +26,15 @@ static void on_shutdown_cb(uv_shutdown_t *, int);
 static void on_alloc_cb(uv_handle_t*, size_t, uv_buf_t*);
 static void on_write_cb(uv_write_t*, int);
 static void on_read_cb(uv_stream_t*, ssize_t, const uv_buf_t*);
+static void on_queuework_cb(uv_work_t*);
+static void on_complete_cb(uv_work_t*, int);
 static void on_connection_cb(uv_stream_t *, int);
 
 /* tcp callbacks */
 static void on_close_cb(uv_handle_t *handle)
 {
 	client_t *client = (client_t *)handle->data;
-	delete client->httpParser;
+	delete (client->hp);
 	free(client);
 }
 
@@ -67,7 +69,7 @@ static void on_read_cb(uv_stream_t* handle, ssize_t nread, const uv_buf_t* buf)
 
 	if (nread < 0) {
 		if (nread == UV_EOF) {
-			std::cout << "客户端主动断开\n";
+			//std::cout << "客户端主动断开\n";
 		}
 		else if (nread == UV_ECONNRESET) {
 			std::cout << "客户端异常断开\n";
@@ -87,17 +89,25 @@ static void on_read_cb(uv_stream_t* handle, ssize_t nread, const uv_buf_t* buf)
 		free(buf->base);
 		return;
 	}
-	
+
 	if (nread > 0) {
 		//解析请求
-		httpServer* hs = (httpServer*)(client->arg);
-		size_t parsed = client->httpParser->httpParseRequest(buf->base, nread);
+		size_t parsed = (client->hp->httpParseRequest(buf->base, nread));
 		if (parsed < nread) {
 			printf("parse error\n");
 			uv_close((uv_handle_t *)handle, on_close_cb);
 		}
-		else {
-			HttpRequest* request = client->httpParser->getRequest();
+		//else { //加入任务队列
+		//	uv_work_t* uw = (uv_work_t*)malloc(sizeof(uv_work_t));
+		//	uw->data = client;
+		//	uv_queue_work(handle->loop, uw, on_queuework_cb, on_complete_cb);
+		//}
+
+		else
+		{
+			httpServer* hs = (httpServer*)(client->arg);
+			HttpRequest* request = client->hp->getRequest();
+
 			//上传
 			if (request->IsUpLoad) {
 				upLoadCallBack upCallBack = hs->getUpCallBack();
@@ -106,6 +116,7 @@ static void on_read_cb(uv_stream_t* handle, ssize_t nread, const uv_buf_t* buf)
 					//组装应答包
 					HttpResponse respones;
 					respones.httpBody = "UpLoad OK";
+					respones.bodySize = sizeof("UpLoad OK");
 
 					headerMap headers;
 					headers["response-content-type"] = "text/plain";
@@ -121,15 +132,16 @@ static void on_read_cb(uv_stream_t* handle, ssize_t nread, const uv_buf_t* buf)
 				}
 			}
 			//下载
-			else if(request->IsDownLoad) {
+			else if (request->IsDownLoad) {
 				char* outbuf = nullptr;
 				downLoadCallBack downCallBack = hs->getDownCallBack();
 				int ret = downCallBack((void*)request, (void**)&outbuf);
 				if (ret != 0) {
 					//组装应答包
 					HttpResponse respones;
-					respones.httpBody = outbuf;
+					respones.httpBody = std::string(outbuf, ret);
 					free(outbuf);
+					respones.bodySize = ret;
 
 					headerMap headers;
 					headers["response-content-type"] = "text/plain";
@@ -139,6 +151,7 @@ static void on_read_cb(uv_stream_t* handle, ssize_t nread, const uv_buf_t* buf)
 
 					std::string responesBuf = respones.getResponse();
 					int len = responesBuf.length();
+					std::cout << responesBuf << std::endl;
 					uv_buf_t buf = uv_buf_init((char*)responesBuf.c_str(), len);
 					int r = uv_write(write_req, (uv_stream_t *)(&client->handle), &buf, 1, on_write_cb);
 					ASSERT(r == 0);
@@ -152,6 +165,77 @@ static void on_read_cb(uv_stream_t* handle, ssize_t nread, const uv_buf_t* buf)
 	return;
 }
 
+static void on_queuework_cb(uv_work_t* uw)
+{
+	client_t *client = (client_t *)uw->data;
+	httpServer* hs = (httpServer*)(client->arg);
+	HttpRequest* request = client->hp->getRequest();
+
+	//上传
+	if (request->IsUpLoad) {
+		upLoadCallBack upCallBack = hs->getUpCallBack();
+		int ret = upCallBack((void*)request);
+		if (ret != 0) {
+			//组装应答包
+			HttpResponse respones;
+			respones.httpBody = "UpLoad OK";
+			respones.bodySize = sizeof("UpLoad OK");
+
+			headerMap headers;
+			headers["response-content-type"] = "text/plain";
+			respones.httpHeaders = headers;
+
+			uv_write_t *write_req = (uv_write_t *)malloc(sizeof(uv_write_t));
+
+			std::string responesBuf = respones.getResponse();
+			int len = responesBuf.length();
+			uv_buf_t buf = uv_buf_init((char*)responesBuf.c_str(), len);
+			int r = uv_write(write_req, (uv_stream_t *)(&client->handle), &buf, 1, on_write_cb);
+			ASSERT(r == 0);
+		}
+	}
+	//下载
+	else if (request->IsDownLoad) {
+		char* outbuf = nullptr;
+		downLoadCallBack downCallBack = hs->getDownCallBack();
+		int ret = downCallBack((void*)request, (void**)&outbuf);
+		if (ret != 0) {
+			//组装应答包
+			HttpResponse respones;
+			respones.httpBody = std::string(outbuf, ret);
+			free(outbuf);
+			respones.bodySize = ret;
+
+			headerMap headers;
+			headers["response-content-type"] = "text/plain";
+			respones.httpHeaders = headers;
+
+			uv_write_t *write_req = (uv_write_t *)malloc(sizeof(uv_write_t));
+
+			std::string responesBuf = respones.getResponse();
+			int len = responesBuf.length();
+			uv_buf_t buf = uv_buf_init((char*)responesBuf.c_str(), len);
+			int r = uv_write(write_req, (uv_stream_t *)(&client->handle), &buf, 1, on_write_cb);
+			if(r)
+				printf(uv_strerror(r));
+			ASSERT(r == 0);
+		}
+	}
+	
+	return;
+}
+
+static void on_complete_cb(uv_work_t* uw, int status)
+{
+	free(uw);
+	uw = nullptr;
+
+	if (status)
+		throw std::exception(uv_strerror(status));
+
+	return;
+}
+
 static void on_connection_cb(uv_stream_t *server, int status)
 {
 	if (status != 0) {
@@ -160,9 +244,12 @@ static void on_connection_cb(uv_stream_t *server, int status)
 	ASSERT(status == 0);
 
 	client_t *client = (client_t *)malloc(sizeof(client_t));
+	ASSERT(client != nullptr);
+	client->handle.data = client;
+	client->handle.loop = server->loop;
+
 	int r = uv_tcp_init(server->loop, &client->handle);
 	ASSERT(r == 0);
-	client->handle.data = client;
 
 	r = uv_accept(server, (uv_stream_t *)&client->handle);
 	if (r) {
@@ -171,14 +258,15 @@ static void on_connection_cb(uv_stream_t *server, int status)
 		ASSERT(r == 0);
 	}
 
-	client->httpParser = new HttpParser(&client->parser, ((httpServer*)(server->data))->parser_settings);
+	client->hp = new HttpParser(&client->parser, ((httpServer*)(server->data))->parser_settings);
+	((httpServer*)server->data)->httpParser = client->hp;
 	client->arg = server->data;
 	r = uv_read_start((uv_stream_t *)&client->handle, on_alloc_cb, on_read_cb);
 }
 
 httpServer::httpServer()
 {
-	uv_os_setenv("UV_THREADPOOL_SIZE", "120");
+	//uv_os_setenv("UV_THREADPOOL_SIZE", "120");
 	this->loop = uv_default_loop();
 	tcpServer.loop = this->loop;
 	tcpServer.data = this;

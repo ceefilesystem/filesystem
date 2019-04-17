@@ -45,7 +45,7 @@ static void on_write_cb(uv_write_t* req, int status)
 typedef struct  ReadData {
 	int nread;
 	uv_stream_t* handle;
-	char*basebuf;
+	char* basebuf;
 }ReadData;
 
 static void on_read_cb(uv_stream_t* handle, ssize_t nread, const uv_buf_t* buf)
@@ -75,7 +75,6 @@ static void on_read_cb(uv_stream_t* handle, ssize_t nread, const uv_buf_t* buf)
 	}
 	
 	if (nread > 0) { //加入任务队列
-
 		ReadData* readData = (ReadData*)calloc(1, sizeof(ReadData));
 		readData->basebuf = (char*)calloc(1, nread);
 		readData->nread = nread;
@@ -109,7 +108,6 @@ static void on_queuework_cb(uv_work_t* uw)
 	if (uv_write(wreq, readData->handle, &buf, 1, on_write_cb)) {
 		FATAL("uv_write failed");
 	}
-
 
 	//TODO
 	//if (buf->base[0] == 1) {//如果是下载协议号

@@ -36,8 +36,9 @@ std::string HttpResponse::getResponse()
 		ostream << iter->first << ": " << iter->second << "\r\n";
 		++iter;
 	}
-	ostream << "Content-Length: " << 100 << "\r\n\r\n";
-	//ostream << "Content-Length: " << httpBody.size() << "\r\n\r\n";
+
+	ostream << "Content-Length: " << httpBody.size() << "\r\n\r\n";
+	//ostream << "Content-Length: " << bodySize << "\r\n\r\n";
 	ostream << httpBody;
 
 	return ostream.str();
@@ -104,7 +105,7 @@ HttpRequest * HttpParser::getRequest()
 
 int HttpParser::on_message_begin_cb(http_parser *parser)
 {
-	printf("\n***MESSAGE BEGIN***\n\n");
+	//printf("\n***MESSAGE BEGIN***\n\n");
 	HttpParser* hp = (HttpParser*)(parser->data);
 	hp->request = new HttpRequest();
 
@@ -113,7 +114,7 @@ int HttpParser::on_message_begin_cb(http_parser *parser)
 
 int HttpParser::on_url_cb(http_parser *parser, const char *at, size_t length)
 {
-	printf("Url: %.*s\n", (int)length, at);
+	//printf("Url: %.*s\n", (int)length, at);
 
 	char urlBuf[256] = { 0 };
 	sprintf(urlBuf, "%.*s", (int)length, at);
@@ -135,7 +136,7 @@ int HttpParser::on_url_cb(http_parser *parser, const char *at, size_t length)
 
 int HttpParser::on_header_field_cb(http_parser *parser, const char *at, size_t length)
 {
-	printf("Header field: %.*s\n", (int)length, at);
+	//printf("Header field: %.*s\n", (int)length, at);
 	HttpParser* hp = (HttpParser*)(parser->data);
 	hp->request->httpHeaderField.assign(at, length);
 
@@ -144,7 +145,7 @@ int HttpParser::on_header_field_cb(http_parser *parser, const char *at, size_t l
 
 int HttpParser::on_header_value_cb(http_parser *parser, const char *at, size_t length)
 {
-	printf("Header value: %.*s\n", (int)length, at);
+	//printf("Header value: %.*s\n", (int)length, at);
 	HttpParser* hp = (HttpParser*)(parser->data);
 	HttpRequest *request = hp->request;
 	request->httpHeaders[request->httpHeaderField] = std::string(at, length);
@@ -164,7 +165,7 @@ int HttpParser::on_headers_complete_cb(http_parser *parser)
 // 可能会多次调用
 int HttpParser::on_body_cb(http_parser *parser, const char *at, size_t length)
 {
-	printf("Body: %.*s\n", (int)length, at);
+	//printf("Body: %.*s\n", (int)length, at);
 	HttpParser* hp = (HttpParser*)(parser->data);
 	hp->request->httpBody.append(at, length);
 
@@ -173,7 +174,7 @@ int HttpParser::on_body_cb(http_parser *parser, const char *at, size_t length)
 
 int HttpParser::on_message_complete_cb(http_parser *parser)
 {
-	printf("\n***MESSAGE COMPLETE***\n\n");
+	//printf("\n***MESSAGE COMPLETE***\n\n");
 	HttpParser* hp = (HttpParser*)(parser->data);
 
 	return 0;

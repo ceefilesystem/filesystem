@@ -1,3 +1,4 @@
+#define _CRT_SECURE_NO_WARNINGS
 #include "upLoadFile.h"
 #include "downLoadFile.h"
 #include "fileService.h"
@@ -32,7 +33,7 @@ static int websocketUpLoadFun(void* in);
 static void timerfun()
 {
 	//检测上传文件是否中断
-	printf("timerfun\n");
+	//printf("timerfun\n");
 	return;
 }
 
@@ -152,18 +153,23 @@ static int httpDownLoadFun(void* in, void** out)
 
 	std::string fileName = "";
 	size_t pos = 0;
-	size_t count = 100;
+	size_t end = 0;
+	size_t count = 0;
 
+	//解析
 	fileName = request->httpUrl.substr(1, request->httpUrl.find('?', 1) - 1);
+	sscanf((char*)(request->httpHeaders["Range"].c_str()), "bytes=%lld-%lld", &pos, &end);
+
+	count = end - pos;
 	downLoadFile* dfile = new downLoadFile(fileName.c_str());
 
 	char* outbuf = nullptr;
 	int ret = dfile->downLoadByRange(pos, count, (char**)&outbuf);
 	if (outbuf != nullptr) {
-		*out = calloc(1, count + 1);
+		*out = calloc(1, count);
 		memcpy(*out, outbuf, count);
 		delete dfile;
-		return ret;
+		return  ret;
 	}
 	else {
 		delete dfile;
@@ -181,7 +187,11 @@ static int httpUpLoadFun(void* in)
 	size_t pos = 0;
 	size_t count = 0;
 
+	//解析
 	fileName = request->httpUrl.substr(1, request->httpUrl.find('?', 1));
+	sprintf((char*)request->httpHeaders["Range"].c_str(), "bytes=%lld-%lld", &pos, &count);
+	sprintf((char*)request->httpHeaders["TotalSize"].c_str(), "%lld", &totalSize);
+
 	upLoadFile* ufile = new upLoadFile(fileName.c_str(), totalSize);
 	int ret = ufile->upLoadByRange(pos, count, (char*)in);
 	if (ret != 0) {

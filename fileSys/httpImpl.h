@@ -45,6 +45,7 @@ public:
 	std::string httpPhrase;
 	headerMap   httpHeaders;
 	std::string httpBody;
+	int bodySize;
 
 	HttpResponse();
 	~HttpResponse();

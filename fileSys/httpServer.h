@@ -8,6 +8,8 @@ typedef int(*upLoadCallBack) (void* in);
 
 class httpServer
 {
+	friend static void on_read_cb(uv_stream_t* ,ssize_t ,const uv_buf_t*);
+	friend static void on_queuework_cb(uv_work_t* uw);
 	friend static void on_connection_cb(uv_stream_t *, int);
 
 private:
