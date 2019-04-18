@@ -149,7 +149,7 @@ int FSByTcp::canceService()
 
 static int httpDownLoadFun(void* in, void** out)
 {
-	HttpRequest* request = (HttpRequest*)in;
+	httpRequest* request = (httpRequest*)in;
 
 	std::string fileName = "";
 	size_t pos = 0;
@@ -180,7 +180,7 @@ static int httpDownLoadFun(void* in, void** out)
 
 static int httpUpLoadFun(void* in)
 {
-	HttpRequest* request = (HttpRequest*)in;
+	httpRequest* request = (httpRequest*)in;
 
 	std::string fileName = "";
 	size_t totalSize = 0;

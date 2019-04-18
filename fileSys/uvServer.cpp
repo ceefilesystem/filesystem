@@ -170,7 +170,6 @@ static void on_connection_cb(uv_stream_t* server, int status)
 	r = uv_accept(server, stream);
 	ASSERT(r == 0);
 
-
 	r = uv_read_start(stream, on_alloc_cb, on_read_cb);
 	ASSERT(r == 0);
 }

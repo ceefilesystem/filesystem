@@ -71,7 +71,7 @@ int mapFile::mapFileReadRang(int pos, int count, char ** out)
 {
 	if (this->mapFileAddr == NULL || pos < 0)
 		return -1;
-	if ((pos > this->mapFileSize) || (pos + count > this->mapFileSize))
+	if (pos > this->mapFileSize)
 		return -1;
 
 	*out = this->mapFileAddr + pos;

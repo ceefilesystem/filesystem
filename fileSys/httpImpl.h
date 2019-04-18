@@ -5,16 +5,16 @@
 struct http_parser;
 struct http_parser_settings;
 
-class HttpRequest;
+class httpRequest;
 
 typedef std::map<std::string, std::string> headerMap;
 typedef headerMap::iterator headerMapIter;
-typedef std::queue<HttpRequest*> reqQueue; //消息队列
+typedef std::queue<httpRequest*> reqQueue; //消息队列
 
 // 请求
-class HttpRequest
+class httpRequest
 {
-	friend class HttpParser;
+	friend class httpParser;
 
 private:
 	std::string httpHeaderField;
@@ -27,41 +27,36 @@ public:
 	headerMap   httpHeaders;
 	std::string httpBody;
 
-	HttpRequest() {
-		IsUpLoad = false;
-		IsDownLoad = false;
-	};
-
-	~HttpRequest() {
-	
-	};
+	httpRequest();
+	virtual ~httpRequest();
 };
 
 // 应答
-class HttpResponse
+class httpResponse
 {
 public:
 	int         httpCode;
 	std::string httpPhrase;
 	headerMap   httpHeaders;
 	std::string httpBody;
-	int bodySize;
 
-	HttpResponse();
-	~HttpResponse();
+	httpResponse();
+	virtual ~httpResponse();
 
 	std::string getResponse();
 	void resetResponse();
 };
 
 // 解析
-class HttpParser
+class httpParser
 {
+	friend class httpServer;
+
 private:
 	http_parser *parser;
 	http_parser_settings *parserSettings;
 
-	HttpRequest *request;
+	httpRequest *request;
 
 	/* http callbacks */
 	static int on_message_begin_cb(http_parser *parser);
@@ -73,10 +68,10 @@ private:
 	static int on_message_complete_cb(http_parser *parser);
 
 public:
-	HttpParser(http_parser *parser, http_parser_settings* parserSettings);
-	~HttpParser();
+	httpParser(http_parser *parser, http_parser_settings* parserSettings);
+	virtual ~httpParser();
 	
 	size_t httpParseRequest(const char *data, size_t len);
 
-	HttpRequest* getRequest();
+	httpRequest* getRequest();
 };
